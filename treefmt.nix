@@ -11,6 +11,7 @@ _: {
       dialect = "postgresql";
     };
     statix.enable = true;
+    templ.enable = true;
     yamlfmt.enable = true;
   };
 }

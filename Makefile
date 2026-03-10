@@ -7,6 +7,7 @@
 	postgres-clean \
 	postgres-kill \
 	psql \
+	dev \
 	sqlc \
 	templ
 
