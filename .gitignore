@@ -10,7 +10,7 @@ result-*
 .env
 
 generated
-
 tmp
-
 target
+
+*_templ.go

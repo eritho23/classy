@@ -7,7 +7,8 @@
 	postgres-clean \
 	postgres-kill \
 	psql \
-	sqlc
+	sqlc \
+	templ
 
 build: ./target/classy
 
@@ -21,6 +22,9 @@ clean: postgres-clean
 	rm -rf $$(readlink ./tmp)
 	rm -rf ./target
 	-unlink ./tmp
+
+templ:
+	templ generate
 
 sqlc:
 	sqlc generate

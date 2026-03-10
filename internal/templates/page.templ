@@ -1,0 +1,17 @@
+package templates
+
+templ Page(data chan string, title string) {
+  <!doctype html>
+  <html>
+    <head>
+      <title>{ title }</title>
+    </head>
+    <body>
+      for d := range data {
+        @templ.Flush() {
+          { d }
+        }
+      }
+    </body>
+  </html>
+}
