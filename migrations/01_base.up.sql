@@ -1,14 +1,14 @@
 begin;
 
-create table group (
+create table grp (
   id uuid primary key default gen_random_uuid(),
-  name varchar(64) unique,
+  name varchar(64) unique
 );
 
 create table person (
   id uuid primary key default gen_random_uuid(),
   username varchar(64) not null unique,
-  group uuid not null references group (id),
+  grp uuid not null references grp (id)
 );
 
 create table suggestion (
@@ -22,7 +22,7 @@ create table suggestion (
   -- A person cannot make a suggestion regarding themselves.
   check (suggester != regarding),
   -- Support composite foreign key.
-  unique (id, regarding),
+  unique (id, regarding)
 );
 
 create table vote (

@@ -6,6 +6,6 @@ drop table suggestion;
 
 drop table person;
 
-drop table group;
+drop table grp;
 
 commit;

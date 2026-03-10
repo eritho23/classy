@@ -1,6 +1,6 @@
 -- name: CreateGroup :one
 insert into
-  group (name)
+  grp (name)
 values
   ($1)
 returning
@@ -12,7 +12,7 @@ select
   id,
   name
 from
-  group
+  grp
 where
   name = $1
 limit
@@ -20,19 +20,19 @@ limit
 
 -- name: CreatePerson :one
 insert into
-  person (username, group)
+  person (username, grp)
 values
   ($1, $2)
 returning
   id,
   username,
-  group;
+  grp;
 
 -- name: GetPersonByUsername :one
 select
   id,
   username,
-  group
+  grp
 from
   person
 where
@@ -43,13 +43,13 @@ limit
 -- name: DeletePersonByUsername :exec
 delete from person
 where
-  username = $1
-limit
-  1;
+  username = $1;
 
 -- name: CreateSuggestion :one
 insert into
   suggestion (suggester, regarding, suggestion, motivation)
+values
+  ($1, $2, $3, $4)
 returning
   id,
   suggester,
@@ -87,13 +87,13 @@ where
 insert into
   vote (caster, target_suggestion, regarding)
 select
-  @ caster::uuid,
-  @ target_suggestion::uuid,
+  $1,
+  $2,
   regarding
 from
   suggestion
 where
-  id = @ target_suggestion::uuid
+  id = $2
 returning
   id,
   caster,
@@ -101,7 +101,7 @@ returning
   regarding,
   time;
 
--- name: DeleteVoteByCasterAndSuggestion :one
+-- name: DeleteVoteByCasterAndSuggestion :exec
 delete from vote
 where
   caster = $1

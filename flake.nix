@@ -44,6 +44,7 @@
           postgresql.out
           sqlc
           sqlite
+          templ
           uutils-coreutils-noprefix
         ];
 
