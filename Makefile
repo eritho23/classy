@@ -21,6 +21,7 @@ clean: postgres-clean
 	find . -type l -name 'result*' -delete
 	rm -rf $$(readlink ./tmp)
 	rm -rf ./target
+	find . -name '*_templ.go' -delete
 	-unlink ./tmp
 
 templ:
