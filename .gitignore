@@ -1,0 +1,16 @@
+# Nix
+.direnv
+result
+result-*
+
+# Go
+*.test
+
+# General
+.env
+
+generated
+
+tmp
+
+target
