@@ -5,7 +5,7 @@
   sqlc,
 }:
 buildGoModule {
-  pname = "gopodder";
+  pname = "classy";
   version = rev;
 
   src = lib.cleanSource ./.;

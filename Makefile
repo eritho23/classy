@@ -9,11 +9,11 @@
 	psql \
 	sqlc
 
-build: ./target/gopodder
+build: ./target/classy
 
-./target/gopodder: sqlc
+./target/classy: sqlc
 	mkdir -p ./target
-	go build -o ./target/gopodder ./cmd/gopodder/main.go
+	go build -o ./target/classy ./cmd/classy/main.go
 
 clean: postgres-clean
 	rm -rf ./internal/generated
@@ -26,24 +26,24 @@ sqlc:
 	sqlc generate
 
 migrate-up:
-	migrate -path "./database/migrations" -database "postgresql://gopodder@/gopodder?host=$$(pwd)/tmp" up
+	migrate -path "./database/migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" up
 
 migrate-down:
-	migrate -path "./database/migrations" -database "postgresql://gopodder@/gopodder?host=$$(pwd)/tmp" down
+	migrate -path "./database/migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" down
 
 ./tmp:
-	ln -sf $$(mktemp --directory /tmp/gopodder.XXXXXX) ./tmp
+	ln -sf $$(mktemp --directory /tmp/classy.XXXXXX) ./tmp
 
 ./tmp/.pgdata: ./tmp
 	initdb \
-		--username=gopodder \
+		--username=classy \
 		-D ./tmp/.pgdata \
 		--auth-local=trust
 
 postgres: ./tmp/.pgdata
 	if [ ! -f ./tmp/.pgdata/postmaster.pid ]; then \
 		pg_ctl -D ./tmp/.pgdata start -o "-c unix_socket_directories=$$(pwd)/tmp -c listen_addresses=''"; \
-		psql -h $$(readlink ./tmp) -U gopodder postgres -c "create database gopodder;" 2>/dev/null || true; \
+		psql -h $$(readlink ./tmp) -U classy postgres -c "create database classy;" 2>/dev/null || true; \
 	fi
 	while [ ! -S ./tmp/.s.PGSQL.5432 ]; do sleep 0.5; done
 
@@ -57,4 +57,4 @@ postgres-clean: postgres-kill
 	rm -rf ./tmp/postgres ./tmp/.pgdata
 
 psql:
-	psql -U gopodder "postgresql://gopodder@/gopodder?host=$$(pwd)/tmp"
+	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
