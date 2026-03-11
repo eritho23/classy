@@ -39,6 +39,8 @@
           gopls
           gosec
           go-tools
+          helix
+          nixd
           pdpmake
           (pkgs.callPackage ./nix/go-migrate.nix {})
           postgresql.out
