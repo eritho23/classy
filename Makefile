@@ -64,3 +64,6 @@ postgres-clean: postgres-kill
 
 psql:
 	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
+
+dev: postgres sqlc
+	air
