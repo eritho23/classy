@@ -68,11 +68,11 @@ postgres-clean: postgres-kill
 psql:
 	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
 
-dev: postgres sqlc
+dev: postgres nginx sqlc
 	air
 
 nginx: ./tmp
-	nginx -c $$(pwd)/config/nginx.conf -p $$(pwd) -g "pid ./tmp/nginx.pid; daemon off;" &
+	nginx -c $$(pwd)/config/nginx.conf -p $$(pwd) -g "pid ./tmp/nginx.pid;"
 	while [ ! -f ./tmp/nginx.pid ]; do sleep 0.5; done
 
 nginx-kill:
