@@ -79,6 +79,7 @@ nginx-kill:
 	if [ -f ./tmp/nginx.pid ]; then \
 		kill $$(cat ./tmp/nginx.pid); \
 		while [ -f ./tmp/nginx.pid ]; do sleep 0.5; done; \
-	fi
+		fi
+	-kill $(pidof nginx)
 
 nginx-clean: nginx-kill
