@@ -30,7 +30,7 @@
     checks = eachSystem (pkgs: {
       formatting = treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.check self;
     });
-    devShells = eachSystem (pkgs: rec {
+    devShells = eachSystem (pkgs: {
       default = pkgs.mkShell {
         packages = with pkgs; [
           air
@@ -40,6 +40,7 @@
           gosec
           go-tools
           helix
+          nginx
           nixd
           pdpmake
           (pkgs.callPackage ./nix/go-migrate.nix {})
