@@ -27,7 +27,7 @@ func main() {
 
 	db, err := pgx.Connect(ctx, databaseUrl)
 	if err != nil {
-		fmt.Println("HTTP_SOCKET_PATH not set")
+		fmt.Printf("Failed to connect to DB: %v", err)
 		os.Exit(1)
 	}
 	defer db.Close(ctx)

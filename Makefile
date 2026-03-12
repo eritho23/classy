@@ -61,6 +61,7 @@ postgres-kill:
 		kill $$(head -n1 ./tmp/.pgdata/postmaster.pid); \
 		while [ -f ./tmp/.pgdata/postmaster.pid ]; do sleep 0.5; done \
 		fi
+	-killall postgres
 
 postgres-clean: postgres-kill
 	rm -rf ./tmp/postgres ./tmp/.pgdata
@@ -80,6 +81,6 @@ nginx-kill:
 		kill $$(cat ./tmp/nginx.pid); \
 		while [ -f ./tmp/nginx.pid ]; do sleep 0.5; done; \
 		fi
-	-kill $(pidof nginx)
+	-killall nginx
 
 nginx-clean: nginx-kill

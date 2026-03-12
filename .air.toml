@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  pre_cmd = ["templ generate"]
+  pre_cmd = ["templ generate", "sqlc generate"]
   cmd = "go build -o ./target/classy ./cmd/classy/main.go"
   bin = "./target/classy"
   full_bin = "./target/classy"
