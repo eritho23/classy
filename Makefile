@@ -35,10 +35,10 @@ sqlc:
 	sqlc generate
 
 migrate-up:
-	migrate -path "./database/migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" up
+	migrate -path "./migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" up
 
 migrate-down:
-	migrate -path "./database/migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" down
+	migrate -path "./migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" down
 
 ./tmp:
 	ln -sf $$(mktemp --directory /tmp/classy.XXXXXX) ./tmp
