@@ -3,6 +3,9 @@
 	clean \
 	migrate-down \
 	migrate-up \
+	nginx \
+	nginx-clean \
+	nginx-kill \
 	postgres \
 	postgres-clean \
 	postgres-kill \
@@ -17,7 +20,7 @@ build: ./target/classy
 	mkdir -p ./target
 	go build -o ./target/classy ./cmd/classy/main.go
 
-clean: postgres-clean
+clean: postgres-clean nginx-clean
 	rm -rf ./internal/generated
 	find . -type l -name 'result*' -delete
 	rm -rf $$(readlink ./tmp)
@@ -64,3 +67,19 @@ postgres-clean: postgres-kill
 
 psql:
 	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
+
+dev: postgres nginx sqlc
+	air
+
+nginx: ./tmp
+	nginx -c $$(pwd)/config/nginx.conf -p $$(pwd) -g "pid ./tmp/nginx.pid;"
+	while [ ! -f ./tmp/nginx.pid ]; do sleep 0.5; done
+
+nginx-kill:
+	if [ -f ./tmp/nginx.pid ]; then \
+		kill $$(cat ./tmp/nginx.pid); \
+		while [ -f ./tmp/nginx.pid ]; do sleep 0.5; done; \
+		fi
+	-kill $(pidof nginx)
+
+nginx-clean: nginx-kill
