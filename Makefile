@@ -13,7 +13,7 @@
 
 build: ./target/classy
 
-./target/classy: sqlc
+./target/classy: sqlc templ
 	mkdir -p ./target
 	go build -o ./target/classy ./cmd/classy/main.go
 
