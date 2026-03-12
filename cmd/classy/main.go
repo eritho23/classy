@@ -3,34 +3,42 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
+
+	"classy/internal/generated/database"
+	"classy/internal/handlers"
 
 	"github.com/jackc/pgx/v5"
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	ctx := context.Background()
 
 	databaseUrl, exists := os.LookupEnv("DATABASE_URL")
 	if !exists {
-		fmt.Println("DATABASE_URL not set")
-		os.Exit(1)
+		log.Fatal("DATABASE_URL not set")
 	}
 
 	socketPath, exists := os.LookupEnv("HTTP_SOCKET_PATH")
 	if !exists {
-		fmt.Println("HTTP_SOCKET_PATH not set")
-		os.Exit(1)
+		log.Fatal("HTTP_SOCKET_PATH not set")
 	}
 
 	db, err := pgx.Connect(ctx, databaseUrl)
 	if err != nil {
-		fmt.Printf("Failed to connect to DB: %v", err)
-		os.Exit(1)
+		log.Fatalf("Failed to connect to DB: %v", err)
 	}
 	defer db.Close(ctx)
+
+	q := queries.New(db)
+	app := handlers.NewClassyApplication(q, db)
 
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
@@ -40,12 +48,9 @@ func main() {
 	defer listener.Close()
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-		w.WriteHeader(http.StatusOK)
-	}))
+	app.RegisterRouteHandlers(mux)
 
 	if err := http.Serve(listener, mux); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

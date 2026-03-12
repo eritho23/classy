@@ -6,6 +6,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./target/classy ./cmd/classy/main.go"
   bin = "./target/classy"
   full_bin = "./target/classy"
+  kill_delay = "2s"
   include_ext = ["go", "templ", "html", "css", "js"]
   exclude_regex = ["_templ\\.go$"]
   exclude_dir = [
@@ -17,7 +18,7 @@ tmp_dir = "tmp"
     ".git",
   ]
   include_dir = []
-  delay = 1000
+  delay = "1s"
   send_interrupt = true
   kill_delay = "500ms"
   log = "build-errors.log"
