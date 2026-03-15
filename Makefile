@@ -69,8 +69,8 @@ postgres-clean: postgres-kill
 psql:
 	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
 
-dev: postgres nginx sqlc
-	air
+dev: postgres nginx migrate-up templ sqlc
+	air -c .air.toml
 
 nginx: ./tmp
 	nginx -c $$(pwd)/config/nginx.conf -p $$(pwd) -g "pid ./tmp/nginx.pid;"

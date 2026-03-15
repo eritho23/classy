@@ -8,7 +8,8 @@ create table grp (
 create table person (
   id uuid primary key default gen_random_uuid(),
   username varchar(64) not null unique,
-  grp uuid not null references grp (id)
+  grp uuid not null references grp (id),
+  password_hash text not null
 );
 
 create table suggestion (

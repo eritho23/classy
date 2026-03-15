@@ -20,9 +20,9 @@ limit
 
 -- name: CreatePerson :one
 insert into
-  person (username, grp)
+  person (username, grp, password_hash)
 values
-  ($1, $2)
+  ($1, $2, $3)
 returning
   id,
   username,
@@ -33,6 +33,18 @@ select
   id,
   username,
   grp
+from
+  person
+where
+  username = $1
+limit
+  1;
+
+-- name: GetPersonPasswordHashByUsername :one
+select
+  id,
+  password_hash,
+  username
 from
   person
 where

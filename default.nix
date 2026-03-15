@@ -3,6 +3,8 @@
   rev ? "unknown-revision",
   lib,
   sqlc,
+  templ,
+  pdpmake,
 }:
 buildGoModule {
   pname = "classy";
@@ -10,7 +12,7 @@ buildGoModule {
 
   src = lib.cleanSource ./.;
 
-  vendorHash = "sha256-vSKqT/ICgWH0KemTyGbuimEUNpFck+RXwkmSC73lpI8=";
+  vendorHash = "sha256-D4EGzxCZLuh0WRIN/QjwHM5/FAr9GwYv1+SJzMvLJpo=";
 
   subPackages = [
     "cmd/classy"
@@ -18,10 +20,14 @@ buildGoModule {
 
   nativeBuildInputs = [
     sqlc
+    templ
+    pdpmake
   ];
 
   preBuild = ''
     sqlc generate
+    sqlc generate
+    pdpmake templ sqlc
   '';
 
   meta = {

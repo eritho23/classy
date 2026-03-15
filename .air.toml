@@ -18,7 +18,7 @@ tmp_dir = "tmp"
   ]
   include_dir = []
   delay = 2000
-  send_interrupt = true
+  send_interrupt = false
   kill_delay = "5s"
   log = "build-errors.log"
 
