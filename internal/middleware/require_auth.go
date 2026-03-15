@@ -23,7 +23,7 @@ func RequireAuth(queries *queries.Queries, next http.HandlerFunc) http.HandlerFu
 				return
 			}
 
-			accountWithHashField, err := queries.GetAccountPasswordHashByName(r.Context(), username)
+			accountWithHashField, err := queries.GetPersonPasswordHashByUsername(r.Context(), username)
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
@@ -48,7 +48,7 @@ func RequireAuth(queries *queries.Queries, next http.HandlerFunc) http.HandlerFu
 			sessionValueHexHashHex := hashing.HashSessionValue(sessionid.Value)
 			session, err := queries.GetSessionByValue(r.Context(), sessionValueHexHashHex)
 			if err != nil {
-				log.Printf("denied account %s due to non-existent session", session.AccountName)
+				log.Printf("denied account %s due to non-existent session", session.Person)
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -58,8 +58,8 @@ func RequireAuth(queries *queries.Queries, next http.HandlerFunc) http.HandlerFu
 				return
 			}
 
-			log.Printf("proceeding with user: %s", session.AccountName)
-			newCtx := context.WithValue(r.Context(), AccountLabel("account"), session.AccountName)
+			log.Printf("proceeding with user: %s", session.Person)
+			newCtx := context.WithValue(r.Context(), AccountLabel("account"), session.ID)
 			newReq := r.WithContext(newCtx)
 
 			next.ServeHTTP(w, newReq)

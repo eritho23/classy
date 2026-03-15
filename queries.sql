@@ -121,13 +121,13 @@ where
 
 -- name: CreateSession :one
 insert into
-  session (value, expires_at, person)
+  session (value, expires_at, created_at, person)
 values
-  ($1, $2, $3)
+  ($1, $2, $3, $4)
 returning
-  id,
   created_at,
-  expires_at;
+  expires_at,
+  id;
 
 -- name: GetSessionByValue :one
 select
