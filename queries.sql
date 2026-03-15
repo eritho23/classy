@@ -118,3 +118,32 @@ delete from vote
 where
   caster = $1
   and target_suggestion = $2;
+
+-- name: CreateSession :one
+insert into
+  session (value, expires_at, person)
+values
+  ($1, $2, $3)
+returning
+  id,
+  created_at,
+  expires_at;
+
+-- name: GetSessionByValue :one
+select
+  id,
+  value,
+  created_at,
+  expires_at,
+  person
+from
+  session
+where
+  value = $1
+limit
+  1;
+
+-- name: DeleteSessionById :exec
+delete from session
+where
+  id = $1;

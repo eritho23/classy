@@ -12,6 +12,15 @@ create table person (
   password_hash text not null
 );
 
+create table session (
+  id uuid primary key default gen_random_uuid(),
+  -- The argon2id hash of the session id value.
+  value text not null unique,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  person uuid not null references person (id)
+);
+
 create table suggestion (
   id uuid primary key default gen_random_uuid(),
   suggester uuid not null references person (id) on delete cascade,
