@@ -6,9 +6,9 @@ _: {
     deadnix.enable = true;
     gofumpt.enable = true;
     mbake.enable = true;
-    sql-formatter = {
+    sqlfluff = {
       enable = true;
-      dialect = "postgresql";
+      dialect = "postgres";
     };
     statix.enable = true;
     templ.enable = true;
