@@ -53,6 +53,18 @@ where
 limit
   1;
 
+-- name: GetPersonByUid :one
+select
+  uid,
+  username,
+  grp
+from
+  person
+where
+  uid = $1
+limit
+  1;
+
 -- name: GetPersonPasswordHashByUsername :one
 select
   uid,
@@ -182,7 +194,7 @@ delete from session
 where
   uid = $1;
 
--- name: GetGroupAndPersonPartOfGroupByGroupuid :one
+-- name: GetGroupAndPersonPartOfGroupByGroupUid :one
 select
   grp.uid,
   grp.name,

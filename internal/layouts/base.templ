@@ -2,6 +2,7 @@ package layouts
 
 import "classy/internal/middleware"
 import "classy/internal/generated/database"
+import "fmt"
 
 templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
 	<!DOCTYPE html>
@@ -47,7 +48,7 @@ templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *querie
 			Suggest Studenten™ plate titles.
 		</p>
 		if authenticationStatus.IsAuthenticated && grp != nil {
-			<a href={ "/group/" + grp.ID.String() }>
+			<a href={ "/group/" + grp.Uid.String() }>
 				Go to your group { grp.Name.String }
 			</a>
 		} else {
@@ -83,9 +84,35 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 			for _, item := range students {
 				<tr>
 					<td>{ item.Username }</td>
-					<td>{ item.NumberOfSuggestions }</td>
+					<td>
+						if authenticationStatus.PersonId != item.Uid {
+							{ item.NumberOfSuggestions }
+						} else {
+							<i>hidden</i>
+						}
+					</td>
+					<td>
+						if authenticationStatus.PersonId != item.Uid {
+							<a href={ fmt.Sprintf("/group/%s/suggest/%s", grp.Uid, item.Uid) }>
+								Suggest
+							</a>
+						} else {
+							<u>Suggest</u>
+						}
+					</td>
 				</tr>
 			}
 		</table>
+	}
+}
+
+templ SuggestionPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person) {
+	@Base("Classy: Suggest plate for"+target.Username, authenticationStatus) {
+		<form method="post">
+			<input value="Klassens" name="value"/>
+			<textarea name="motivation" placeholder="motivation"></textarea>
+			<span>Reminder: it is public who made this suggestion.</span>
+			<button type="submit">Submit</button>
+		</form>
 	}
 }

@@ -36,6 +36,7 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("POST /login", app.PostLoginHandler)
 	router.HandleFunc("GET /logout", app.GetLogoutHandler)
 	router.HandleFunc("GET /group/{groupId}", app.GetGroupGroupIdHandler)
+	router.HandleFunc("GET /group/{groupId}/suggest/{personId}", app.GetGroupGroupIdSuggestPersonIdHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -73,7 +74,7 @@ func (app *ClassyApplication) GetRootHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	err = layouts.RootPage(authStatus, &queries.Grp{
-		ID:   grp.GroupID,
+		Uid:  grp.GroupUid,
 		Name: grp.GroupName,
 	}).Render(r.Context(), w)
 	if err != nil {
@@ -135,7 +136,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 		Value:     sessionValueHexHashHex,
 		CreatedAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(1 * time.Hour), Valid: true},
-		Person:    personRow.ID,
+		Person:    personRow.Uid,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -173,7 +174,7 @@ func (app *ClassyApplication) GetLogoutHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.queries.DeleteSessionById(r.Context(), oldSession.ID)
+	err = app.queries.DeleteSessionByUid(r.Context(), oldSession.Uid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -210,9 +211,9 @@ func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupId(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupIdParams{
-		PersonID: authStatus.PersonId,
-		GroupID: pgtype.UUID{
+	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupUid(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupUidParams{
+		PersonUid: authStatus.PersonId,
+		GroupUid: pgtype.UUID{
 			Bytes: groupUuid,
 			Valid: true,
 		},
@@ -223,17 +224,80 @@ func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	students, err := app.queries.GetStudentsAndSuggestionCountsByGrp(r.Context(), groupRow.ID)
+	students, err := app.queries.GetStudentsAndSuggestionCountsByGrp(r.Context(), groupRow.Uid)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = layouts.GroupPage(authStatus, queries.Grp{
-		ID:   groupRow.ID,
+		Uid:  groupRow.Uid,
 		Name: groupRow.Name,
 	}, students).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render group page template: %v", err)
+	}
+}
+
+func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	groupId := r.PathValue("groupId")
+	if groupId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupUuid, err := uuid.Parse(groupId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupUid(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupUidParams{
+		PersonUid: authStatus.PersonId,
+		GroupUid: pgtype.UUID{
+			Bytes: groupUuid,
+			Valid: true,
+		},
+	})
+
+	if !groupRow.PersonPartOfGroup {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	targetPersonId := r.PathValue("personId")
+	if targetPersonId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonUuid, err := uuid.Parse(targetPersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	personRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
+		Bytes: targetPersonUuid,
+		Valid: true,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = layouts.SuggestionPage(authStatus, queries.Person{
+		Uid:      personRow.Uid,
+		Username: personRow.Username,
+		Grp:      personRow.Grp,
+	}).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render suggestion page: %v", err)
 	}
 }

@@ -47,9 +47,19 @@ func main() {
 	grp, _ := q.CreateGroup(ctx, pgtype.Text{String: "230S", Valid: true})
 	hash, _ := hashing.GenerateNewHash([]byte("erre"))
 	q.CreatePerson(ctx, queries.CreatePersonParams{
-		Grp:          grp.ID,
+		Grp:          grp.Uid,
 		PasswordHash: hash,
 		Username:     "erre",
+	})
+	q.CreatePerson(ctx, queries.CreatePersonParams{
+		Grp:          grp.Uid,
+		PasswordHash: hash,
+		Username:     "erre2",
+	})
+	q.CreatePerson(ctx, queries.CreatePersonParams{
+		Grp:          grp.Uid,
+		PasswordHash: hash,
+		Username:     "erre3",
 	})
 	// END SEED BLOCK //
 
