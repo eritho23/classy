@@ -193,11 +193,11 @@ select
       person p
     where
       p.grp = grp.uid
-      and p.uid = @ person_uid
+      and p.uid = @person_uid
   ) as person_part_of_group
 from
   grp
 where
-  grp.uid = @ group_uid
+  grp.uid = @group_uid
 limit
   1;
