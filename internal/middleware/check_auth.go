@@ -10,37 +10,20 @@ import (
 	"classy/internal/hashing"
 )
 
-type AccountLabel string
+type AuthenticationStatus struct {
+	IsAuthenticated bool
+	PersonName      string
+}
+type AuthenticationStatusKey string
 
-func RequireAuth(queries *queries.Queries, next http.HandlerFunc) http.HandlerFunc {
+func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionid, err := r.Cookie("sessionid")
 		if err != nil {
-			// gPodder seems to use stateless client.
-			username, password, ok := r.BasicAuth()
-			if !ok {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			accountWithHashField, err := queries.GetPersonPasswordHashByUsername(r.Context(), username)
-			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			correct, err := hashing.CheckPassword(accountWithHashField.PasswordHash, []byte(password))
-			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			if !correct {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			newCtx := context.WithValue(r.Context(), AccountLabel("account"), username)
+			// We set the context authenticated to false.
+			newCtx := context.WithValue(r.Context(), AuthenticationStatusKey("authentication_status"), AuthenticationStatus{
+				IsAuthenticated: false,
+			})
 			newReq := r.WithContext(newCtx)
 
 			next.ServeHTTP(w, newReq)
@@ -59,7 +42,12 @@ func RequireAuth(queries *queries.Queries, next http.HandlerFunc) http.HandlerFu
 			}
 
 			log.Printf("proceeding with user: %s", session.Person)
-			newCtx := context.WithValue(r.Context(), AccountLabel("account"), session.ID)
+
+			newCtx := context.WithValue(r.Context(), AuthenticationStatusKey("authentication_status"), AuthenticationStatus{
+				IsAuthenticated: true,
+				PersonName:      session.Username,
+			})
+
 			newReq := r.WithContext(newCtx)
 
 			next.ServeHTTP(w, newReq)

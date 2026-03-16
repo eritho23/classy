@@ -3,6 +3,7 @@ insert into
   grp (name)
 values
   ($1)
+on conflict do nothing
 returning
   id,
   name;
@@ -131,13 +132,15 @@ returning
 
 -- name: GetSessionByValue :one
 select
-  id,
+  session.id,
   value,
   created_at,
   expires_at,
-  person
+  session.person,
+  person.username
 from
   session
+  inner join person on session.person = person.id
 where
   value = $1
 limit

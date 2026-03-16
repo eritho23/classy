@@ -11,6 +11,7 @@ import (
 	"classy/internal/generated/database"
 	"classy/internal/handlers"
 	"classy/internal/hashing"
+	"classy/internal/middleware"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -42,7 +43,7 @@ func main() {
 	app := handlers.NewClassyApplication(q, db)
 
 	// BEGIN SEED BLOCK //
-	db.Exec(ctx, "delete from person; delete from grp;")
+	db.Exec(ctx, "delete from session; delete from person; delete from grp;")
 	grp, _ := q.CreateGroup(ctx, pgtype.Text{String: "230S", Valid: true})
 	hash, _ := hashing.GenerateNewHash([]byte("erre"))
 	q.CreatePerson(ctx, queries.CreatePersonParams{
@@ -69,7 +70,9 @@ func main() {
 	mux := http.NewServeMux()
 	app.RegisterRouteHandlers(mux)
 
-	if err := http.Serve(listener, mux); err != nil {
+	muxWithMiddleware := middleware.CheckAuth(q, mux)
+
+	if err := http.Serve(listener, muxWithMiddleware); err != nil {
 		log.Fatal(err)
 	}
 }

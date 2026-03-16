@@ -10,9 +10,6 @@ import (
 	queries "classy/internal/generated/database"
 	"classy/internal/hashing"
 	"classy/internal/layouts"
-	"classy/internal/middleware"
-
-	// "classy/internal/middleware"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -35,13 +32,13 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("GET /login", app.GetLoginHandler)
 	router.HandleFunc("POST /login", app.PostLoginHandler)
 
-	router.HandleFunc("GET /health", middleware.RequireAuth(app.queries, func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, "OK")
 		if err != nil {
 			slog.Warn("Error in writing health string???")
 		}
-	}))
+	})
 }
 
 func (app *ClassyApplication) GetRootHandler(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +103,4 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-
-	w.WriteHeader(http.StatusOK)
 }

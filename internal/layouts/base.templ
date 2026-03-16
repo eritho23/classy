@@ -1,6 +1,6 @@
 package layouts
 
-templ Base(title string) {
+templ Base(title string, authenticatedUser string, isAuthenticated bool) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -9,7 +9,7 @@ templ Base(title string) {
 			<title>{ title }</title>
 		</head>
 		<body>
-			@header()
+			@header(authenticatedUser, isAuthenticated)
 			<main>
 				{ children... }
 			</main>
@@ -18,11 +18,15 @@ templ Base(title string) {
 	</html>
 }
 
-templ header() {
+templ header(authenticatedUser string, isAuthenticated bool) {
 	<header>
 		<nav>
 			<a href="/">Home</a>
-			<a href="/login">Log in</a>
+			if !isAuthenticated {
+				<a href="/login">Log in</a>
+			} else {
+				<a href="/logout">Log out user { authenticatedUser }</a>
+			}
 		</nav>
 	</header>
 }
