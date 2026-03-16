@@ -14,14 +14,30 @@ type AuthenticationStatus struct {
 	IsAuthenticated bool
 	PersonName      string
 }
-type AuthenticationStatusKey string
+type authenticationStatusKeyType string
+
+const authenticationStatusKey authenticationStatusKeyType = "authentication_status"
+
+func GetAuthenticationStatusFromRequestContext(r *http.Request) AuthenticationStatus {
+	val := r.Context().Value(authenticationStatusKey)
+	if val == nil {
+		return AuthenticationStatus{}
+	}
+
+	status, ok := val.(*AuthenticationStatus)
+	if !ok || status == nil {
+		return AuthenticationStatus{}
+	}
+
+	return *status
+}
 
 func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionid, err := r.Cookie("sessionid")
 		if err != nil {
 			// We set the context authenticated to false.
-			newCtx := context.WithValue(r.Context(), AuthenticationStatusKey("authentication_status"), AuthenticationStatus{
+			newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
 				IsAuthenticated: false,
 			})
 			newReq := r.WithContext(newCtx)
@@ -30,20 +46,20 @@ func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 		} else {
 			sessionValueHexHashHex := hashing.HashSessionValue(sessionid.Value)
 			session, err := queries.GetSessionByValue(r.Context(), sessionValueHexHashHex)
-			if err != nil {
-				log.Printf("denied account %s due to non-existent session", session.Person)
-				w.WriteHeader(http.StatusUnauthorized)
+			if err != nil || time.Now().After(session.ExpiresAt.Time) {
+				newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
+					IsAuthenticated: false,
+				})
+				newReq := r.WithContext(newCtx)
+
+				next.ServeHTTP(w, newReq)
+
 				return
 			}
 
-			if time.Now().After(session.ExpiresAt.Time) {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+			log.Printf("acceptable session from user: %s", session.Person)
 
-			log.Printf("proceeding with user: %s", session.Person)
-
-			newCtx := context.WithValue(r.Context(), AuthenticationStatusKey("authentication_status"), AuthenticationStatus{
+			newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
 				IsAuthenticated: true,
 				PersonName:      session.Username,
 			})

@@ -19,6 +19,20 @@ where
 limit
   1;
 
+-- name: GetGroupByUsername :one
+select
+  person.username as username,
+  person.id as person_id,
+  grp.id as group_id,
+  grp.name as group_name
+from
+  grp
+  inner join person on person.grp = grp.id
+where
+  person.username = $1
+limit
+  1;
+
 -- name: CreatePerson :one
 insert into
   person (username, grp, password_hash)

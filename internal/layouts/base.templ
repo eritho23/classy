@@ -1,6 +1,9 @@
 package layouts
 
-templ Base(title string, authenticatedUser string, isAuthenticated bool) {
+import "classy/internal/middleware"
+import "classy/internal/generated/database"
+
+templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -9,7 +12,7 @@ templ Base(title string, authenticatedUser string, isAuthenticated bool) {
 			<title>{ title }</title>
 		</head>
 		<body>
-			@header(authenticatedUser, isAuthenticated)
+			@header(authenticationStatus)
 			<main>
 				{ children... }
 			</main>
@@ -18,14 +21,14 @@ templ Base(title string, authenticatedUser string, isAuthenticated bool) {
 	</html>
 }
 
-templ header(authenticatedUser string, isAuthenticated bool) {
+templ header(authenticationStatus middleware.AuthenticationStatus) {
 	<header>
 		<nav>
 			<a href="/">Home</a>
-			if !isAuthenticated {
+			if !authenticationStatus.IsAuthenticated {
 				<a href="/login">Log in</a>
 			} else {
-				<a href="/logout">Log out user { authenticatedUser }</a>
+				<a href="/logout">Log out user { authenticationStatus.PersonName }</a>
 			}
 		</nav>
 	</header>
@@ -37,17 +40,29 @@ templ footer() {
 	</footer>
 }
 
-templ RootPage() {
-	@Base("Classy") {
-		<h1>Hello, World!</h1>
+templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *queries.Grp) {
+	@Base("Classy", authenticationStatus) {
+		<h1>Welcome to Classy</h1>
+		<p>
+			Suggest Studenten™ plate titles.
+		</p>
+		if authenticationStatus.IsAuthenticated && grp != nil {
+			<a href={ "/group/" + grp.ID.String() }>
+				Go to your group { grp.Name.String }
+			</a>
+		} else {
+			<a href="/login">
+				Log in to start
+			</a>
+		}
 	}
 }
 
-templ LoginPage(err string) {
-	@Base("Classy: Login") {
-		if err != "" {
+templ LoginPage(loginError string, authenticationStatus middleware.AuthenticationStatus) {
+	@Base("Classy: Login", authenticationStatus) {
+		if loginError != "" {
 			<div>
-				{ err }
+				{ loginError }
 			</div>
 		}
 		<form method="post">
