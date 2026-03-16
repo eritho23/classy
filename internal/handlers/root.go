@@ -13,6 +13,7 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -34,6 +35,7 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("GET /login", app.GetLoginHandler)
 	router.HandleFunc("POST /login", app.PostLoginHandler)
 	router.HandleFunc("GET /logout", app.GetLogoutHandler)
+	router.HandleFunc("GET /group/{groupId}", app.GetGroupGroupIdHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -53,25 +55,37 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 func (app *ClassyApplication) GetRootHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		err := layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render root page template: %v", err)
+		}
 		return
 	}
 
 	grp, err := app.queries.GetGroupByUsername(r.Context(), authStatus.PersonName)
 	if err != nil {
 		log.Printf("failed to get group for user: %s", authStatus.PersonName)
-		layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		err = layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render root page template: %v", err)
+		}
 		return
 	}
 
-	layouts.RootPage(authStatus, &queries.Grp{
+	err = layouts.RootPage(authStatus, &queries.Grp{
 		ID:   grp.GroupID,
 		Name: grp.GroupName,
 	}).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render root page template: %v", err)
+	}
 }
 
 func (app *ClassyApplication) GetLoginHandler(w http.ResponseWriter, r *http.Request) {
-	layouts.LoginPage("", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+	err := layouts.LoginPage("", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render login page template: %v", err)
+	}
 }
 
 const incorrectCredentialsMsg = "invalid credentials"
@@ -81,21 +95,30 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	providedPassword := r.FormValue("password")
 	if providedUsername == "" || providedPassword == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		layouts.LoginPage("both username and password must be provided", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err := layouts.LoginPage("both username and password must be provided", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render login page template: %v", err)
+		}
 		return
 	}
 
 	personRow, err := app.queries.GetPersonPasswordHashByUsername(r.Context(), providedUsername)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render login page template: %v", err)
+		}
 		return
 	}
 
 	match, err := hashing.CheckPassword(personRow.PasswordHash, []byte(providedPassword))
 	if err != nil || !match {
 		w.WriteHeader(http.StatusUnauthorized)
-		layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render login page template: %v", err)
+		}
 		return
 	}
 
@@ -166,4 +189,51 @@ func (app *ClassyApplication) GetLogoutHandler(w http.ResponseWriter, r *http.Re
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	groupId := r.PathValue("groupId")
+	if groupId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupUuid, err := uuid.Parse(groupId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupId(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupIdParams{
+		PersonID: authStatus.PersonId,
+		GroupID: pgtype.UUID{
+			Bytes: groupUuid,
+			Valid: true,
+		},
+	})
+
+	if !groupRow.PersonPartOfGroup {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	students, err := app.queries.GetStudentsAndSuggestionCountsByGrp(r.Context(), groupRow.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = layouts.GroupPage(authStatus, queries.Grp{
+		ID:   groupRow.ID,
+		Name: groupRow.Name,
+	}, students).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render group page template: %v", err)
+	}
 }

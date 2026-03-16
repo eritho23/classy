@@ -8,11 +8,14 @@ import (
 
 	queries "classy/internal/generated/database"
 	"classy/internal/hashing"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AuthenticationStatus struct {
 	IsAuthenticated bool
 	PersonName      string
+	PersonId        pgtype.UUID
 }
 type authenticationStatusKeyType string
 
@@ -62,6 +65,7 @@ func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 			newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
 				IsAuthenticated: true,
 				PersonName:      session.Username,
+				PersonId:        session.Person,
 			})
 
 			newReq := r.WithContext(newCtx)

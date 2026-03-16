@@ -5,29 +5,27 @@ values
   ($1)
 on conflict do nothing
 returning
-  id,
+  uid,
   name;
 
--- name: GetGroupByName :one
+-- name: GetGroupByUid :one
 select
-  id,
+  uid,
   name
 from
   grp
 where
-  name = $1
-limit
-  1;
+  uid = $1;
 
 -- name: GetGroupByUsername :one
 select
   person.username as username,
-  person.id as person_id,
-  grp.id as group_id,
+  person.uid as person_uid,
+  grp.uid as group_uid,
   grp.name as group_name
 from
   grp
-  inner join person on person.grp = grp.id
+  inner join person on person.grp = grp.uid
 where
   person.username = $1
 limit
@@ -39,13 +37,13 @@ insert into
 values
   ($1, $2, $3)
 returning
-  id,
+  uid,
   username,
   grp;
 
 -- name: GetPersonByUsername :one
 select
-  id,
+  uid,
   username,
   grp
 from
@@ -57,7 +55,7 @@ limit
 
 -- name: GetPersonPasswordHashByUsername :one
 select
-  id,
+  uid,
   password_hash,
   username
 from
@@ -72,21 +70,40 @@ delete from person
 where
   username = $1;
 
+-- name: GetStudentsAndSuggestionCountsByGrp :many
+select
+  username,
+  uid,
+  (
+    select
+      count(*)
+    from
+      suggestion
+    where
+      regarding = uid
+  ) as number_of_suggestions
+from
+  person
+where
+  grp = $1
+order by
+  username asc;
+
 -- name: CreateSuggestion :one
 insert into
   suggestion (suggester, regarding, suggestion, motivation)
 values
   ($1, $2, $3, $4)
 returning
-  id,
+  uid,
   suggester,
   regarding,
   suggestion,
   motivation;
 
--- name: GetSuggestionById :one
+-- name: GetSuggestionByUid :one
 select
-  id,
+  uid,
   suggester,
   regarding,
   suggestion,
@@ -94,7 +111,7 @@ select
 from
   suggestion
 where
-  id = $1;
+  uid = $1;
 
 -- name: UpdateSuggestion :exec
 update suggestion
@@ -102,12 +119,12 @@ set
   suggestion = $1,
   motivation = $2
 where
-  id = $3;
+  uid = $3;
 
 -- name: DeleteSuggestion :exec
 delete from suggestion
 where
-  id = $1;
+  uid = $1;
 
 -- These two will be wrapped in a transaction block later.
 -- name: CreateVote :one
@@ -120,9 +137,9 @@ select
 from
   suggestion
 where
-  id = $2
+  uid = $2
 returning
-  id,
+  uid,
   caster,
   target_suggestion,
   regarding,
@@ -142,11 +159,11 @@ values
 returning
   created_at,
   expires_at,
-  id;
+  uid;
 
 -- name: GetSessionByValue :one
 select
-  session.id,
+  session.uid,
   value,
   created_at,
   expires_at,
@@ -154,13 +171,33 @@ select
   person.username
 from
   session
-  inner join person on session.person = person.id
+  inner join person on session.person = person.uid
 where
   value = $1
 limit
   1;
 
--- name: DeleteSessionById :exec
+-- name: DeleteSessionByUid :exec
 delete from session
 where
-  id = $1;
+  uid = $1;
+
+-- name: GetGroupAndPersonPartOfGroupByGroupuid :one
+select
+  grp.uid,
+  grp.name,
+  exists (
+    select
+      1
+    from
+      person p
+    where
+      p.grp = grp.uid
+      and p.uid = @ person_uid
+  ) as person_part_of_group
+from
+  grp
+where
+  grp.uid = @ group_uid
+limit
+  1;
