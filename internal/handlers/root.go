@@ -36,8 +36,9 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("POST /login", app.PostLoginHandler)
 	router.HandleFunc("GET /logout", app.GetLogoutHandler)
 	router.HandleFunc("GET /group/{groupId}", app.GetGroupGroupIdHandler)
-	router.HandleFunc("GET /group/{groupId}/suggest/{personId}", app.GetGroupGroupIdSuggestPersonIdHandler)
-	router.HandleFunc("POST /group/{groupId}/suggest/{personId}", app.PostGroupGroupIdSuggestPersonIdHandler)
+	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggest", app.GetGroupGroupIdPersonPersonIdSuggestHandler)
+	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggest", app.PostGroupGroupIdPersonPersonIdSuggestHandler)
+	router.HandleFunc("GET /group/{groupId}/person/{personId}", app.GetGroupGroupIdPersonPersonIdHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -240,7 +241,7 @@ func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *h
 	}
 }
 
-func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.ResponseWriter, r *http.Request) {
+func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -298,7 +299,7 @@ func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.Respo
 		return
 	}
 
-	err = layouts.SuggestionPage(authStatus, queries.Person{
+	err = layouts.SuggestionSubmitPage(authStatus, queries.Person{
 		Uid:      personRow.Uid,
 		Username: personRow.Username,
 		Grp:      personRow.Grp,
@@ -308,7 +309,7 @@ func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.Respo
 	}
 }
 
-func (app *ClassyApplication) PostGroupGroupIdSuggestPersonIdHandler(w http.ResponseWriter, r *http.Request) {
+func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -412,4 +413,59 @@ func (app *ClassyApplication) PostGroupGroupIdSuggestPersonIdHandler(w http.Resp
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s/suggestion/%s", groupId, suggestion.Regarding, suggestion.Uid), http.StatusSeeOther)
+}
+
+func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	targetPersonId := r.PathValue("personId")
+	if targetPersonId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonUuid, err := uuid.Parse(targetPersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
+		Bytes: targetPersonUuid,
+		Valid: true,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if targetPersonRow.Uid.Bytes == authStatus.PersonId.Bytes {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestions, err := app.queries.GetSuggestionsForPerson(r.Context(), queries.GetSuggestionsForPersonParams{
+		RegardingUid: pgtype.UUID{
+			Bytes: targetPersonUuid,
+			Valid: true,
+		},
+		RequesterUid: authStatus.PersonId,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = layouts.SuggestionsForPersonPage(authStatus, queries.Person{
+		Uid:      targetPersonRow.Uid,
+		Username: targetPersonRow.Username,
+		Grp:      targetPersonRow.Grp,
+	}, suggestions).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render suggestions for person page: %v", err)
+	}
 }

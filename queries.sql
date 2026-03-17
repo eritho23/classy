@@ -138,6 +138,24 @@ delete from suggestion
 where
   uid = $1;
 
+-- name: GetSuggestionsForPerson :many
+select 
+  suggestion.uid,
+  suggester,
+  suggestion.regarding,
+  suggestion.suggestion,
+  motivation,
+  rp.username as regarding_username,
+  sp.username as suggester_username,
+  (select count(*) from vote where suggestion = suggestion.uid) as number_of_votes
+from
+  suggestion
+  inner join person rp on suggestion.regarding = rp.uid
+  inner join person sp on suggestion.suggester = sp.uid
+where
+  suggestion.regarding::text = @regarding_uid
+  and suggestion.regarding::text != @requester_uid;
+
 -- These two will be wrapped in a transaction block later.
 -- name: CreateVote :one
 insert into

@@ -45,7 +45,7 @@ templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *querie
 	@Base("Classy", authenticationStatus) {
 		<h1>Welcome to Classy</h1>
 		<p>
-			Suggest Studenten™ plate titles.
+			Suggest Studenten™ plate titles and vote.
 		</p>
 		if authenticationStatus.IsAuthenticated && grp != nil {
 			<a href={ "/group/" + grp.Uid.String() }>
@@ -85,9 +85,10 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 			for _, item := range students {
 				<tr>
 					<td>
-						{ item.Username }
 						if authenticationStatus.PersonId == item.Uid {
-							(you)
+							{ item.Username } (you)
+						} else {
+							<a href={ fmt.Sprintf("/group/%s/person/%s", grp.Uid, item.Uid) }>{ item.Username }</a>
 						}
 					</td>
 					<td>
@@ -99,7 +100,7 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 					</td>
 					<td>
 						if authenticationStatus.PersonId != item.Uid {
-							<a href={ fmt.Sprintf("/group/%s/suggest/%s", grp.Uid, item.Uid) }>
+							<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", grp.Uid, item.Uid) }>
 								Suggest
 							</a>
 						} else {
@@ -112,7 +113,7 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 	}
 }
 
-templ SuggestionPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person) {
+templ SuggestionSubmitPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person) {
 	@Base("Classy: Suggest plate for"+target.Username, authenticationStatus) {
 		<form method="post">
 			<input value="Klassens" name="value"/>
@@ -120,5 +121,31 @@ templ SuggestionPage(authenticationStatus middleware.AuthenticationStatus, targe
 			<span>Reminder: it is public who made this suggestion.</span>
 			<button type="submit">Submit</button>
 		</form>
+	}
+}
+
+templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsForPersonRow) {
+	@Base("Classy: Suggestions for "+target.Username, authenticationStatus) {
+		<h1>Suggestions for { target.Username }</h1>
+		<table>
+			<tr>
+				<th>Suggestion by</th>
+				<th>Suggestion (Klassens...)</th>
+				<th>Number of votes</th>
+			</tr>
+			for _, suggestion := range suggestions {
+				<tr>
+					<td>
+						{ suggestion.SuggesterUsername }
+					</td>
+					<td>
+						{ suggestion.Suggestion.String }
+					</td>
+					<td>
+						{ suggestion.NumberOfVotes }
+					</td>
+				</tr>
+			}
+		</table>
 	}
 }
