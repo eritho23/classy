@@ -37,6 +37,7 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("GET /logout", app.GetLogoutHandler)
 	router.HandleFunc("GET /group/{groupId}", app.GetGroupGroupIdHandler)
 	router.HandleFunc("GET /group/{groupId}/suggest/{personId}", app.GetGroupGroupIdSuggestPersonIdHandler)
+	router.HandleFunc("POST /group/{groupId}/suggest/{personId}", app.PostGroupGroupIdSuggestPersonIdHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -292,6 +293,11 @@ func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.Respo
 		return
 	}
 
+	if personRow.Uid.Bytes == authStatus.PersonId.Bytes {
+		http.Redirect(w, r, fmt.Sprintf("/group/%s", groupId), http.StatusSeeOther)
+		return
+	}
+
 	err = layouts.SuggestionPage(authStatus, queries.Person{
 		Uid:      personRow.Uid,
 		Username: personRow.Username,
@@ -300,4 +306,110 @@ func (app *ClassyApplication) GetGroupGroupIdSuggestPersonIdHandler(w http.Respo
 	if err != nil {
 		log.Printf("failed to render suggestion page: %v", err)
 	}
+}
+
+func (app *ClassyApplication) PostGroupGroupIdSuggestPersonIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	groupId := r.PathValue("groupId")
+	if groupId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupUuid, err := uuid.Parse(groupId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupUid(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupUidParams{
+		PersonUid: authStatus.PersonId,
+		GroupUid: pgtype.UUID{
+			Bytes: groupUuid,
+			Valid: true,
+		},
+	})
+
+	if !groupRow.PersonPartOfGroup {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	targetPersonId := r.PathValue("personId")
+	if targetPersonId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonUuid, err := uuid.Parse(targetPersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	personRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
+		Bytes: targetPersonUuid,
+		Valid: true,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if personRow.Uid.Bytes == authStatus.PersonId.Bytes {
+		http.Redirect(w, r, fmt.Sprintf("/group/%s", groupId), http.StatusSeeOther)
+		return
+	}
+
+	suggestionExists, err := app.queries.ExistsSuggestionOnTargetByUserById(r.Context(), queries.ExistsSuggestionOnTargetByUserByIdParams{
+		SuggesterUid: authStatus.PersonId,
+		RegardingUid: pgtype.UUID{
+			Valid: true,
+			Bytes: targetPersonUuid,
+		},
+		GroupUid: groupRow.Uid,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if suggestionExists {
+		w.Write([]byte("You have already made a suggestion for this person..."))
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestionValue := r.FormValue("value")
+	if suggestionValue == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestion, err := app.queries.CreateSuggestion(r.Context(), queries.CreateSuggestionParams{
+		Suggester: authStatus.PersonId,
+		Regarding: pgtype.UUID{
+			Valid: true,
+			Bytes: targetPersonUuid,
+		},
+		Suggestion: pgtype.Text{
+			String: suggestionValue,
+			Valid:  true,
+		},
+		Motivation: pgtype.Text{
+			String: r.FormValue("motivation"),
+			Valid:  true,
+		},
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s/suggestion/%s", groupId, suggestion.Regarding, suggestion.Uid), http.StatusSeeOther)
 }

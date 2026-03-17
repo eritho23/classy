@@ -213,3 +213,17 @@ where
   grp.uid = @group_uid
 limit
   1;
+
+-- name: ExistsSuggestionOnTargetByUserById :one
+select exists (
+  select
+    1
+  from
+    suggestion
+    inner join person on suggestion.suggester = person.uid
+    inner join grp on grp.uid = person.grp
+  where
+    suggester = @suggester_uid
+    and regarding = @regarding_uid
+    and grp.uid = @group_uid
+  ) as suggestion_exists;

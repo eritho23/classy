@@ -80,10 +80,16 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 			<tr>
 				<th>Name</th>
 				<th>Number of suggestions</th>
+				<th>Perform suggestion</th>
 			</tr>
 			for _, item := range students {
 				<tr>
-					<td>{ item.Username }</td>
+					<td>
+						{ item.Username }
+						if authenticationStatus.PersonId == item.Uid {
+							(you)
+						}
+					</td>
 					<td>
 						if authenticationStatus.PersonId != item.Uid {
 							{ item.NumberOfSuggestions }
