@@ -11,6 +11,7 @@
 	postgres-kill \
 	psql \
 	dev \
+	seed \
 	sqlc \
 	templ
 
@@ -40,6 +41,9 @@ migrate-up:
 migrate-down:
 	migrate -path "./migrations" -database "postgresql://classy@/classy?host=$$(pwd)/tmp" down
 
+seed:
+	go run ./cmd/seed/main.go
+
 ./tmp:
 	ln -sf $$(mktemp --directory /tmp/classy.XXXXXX) ./tmp
 
@@ -61,7 +65,7 @@ postgres-kill:
 		kill $$(head -n1 ./tmp/.pgdata/postmaster.pid); \
 		while [ -f ./tmp/.pgdata/postmaster.pid ]; do sleep 0.5; done \
 		fi
-	-killall postgres
+	-pkill postgres
 
 postgres-clean: postgres-kill
 	rm -rf ./tmp/postgres ./tmp/.pgdata
@@ -69,7 +73,7 @@ postgres-clean: postgres-kill
 psql:
 	psql -U classy "postgresql://classy@/classy?host=$$(pwd)/tmp"
 
-dev: postgres nginx migrate-up templ sqlc
+dev: postgres nginx migrate-up templ sqlc seed
 	air -c .air.toml
 
 nginx: ./tmp
@@ -81,6 +85,6 @@ nginx-kill:
 		kill $$(cat ./tmp/nginx.pid); \
 		while [ -f ./tmp/nginx.pid ]; do sleep 0.5; done; \
 		fi
-	-killall nginx
+	-pkill nginx
 
 nginx-clean: nginx-kill

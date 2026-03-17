@@ -412,7 +412,7 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s/suggestion/%s", groupId, suggestion.Regarding, suggestion.Uid), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s", groupId, suggestion.Regarding), http.StatusSeeOther)
 }
 
 func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -448,12 +448,9 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.Respon
 		return
 	}
 
-	suggestions, err := app.queries.GetSuggestionsForPerson(r.Context(), queries.GetSuggestionsForPersonParams{
-		RegardingUid: pgtype.UUID{
-			Bytes: targetPersonUuid,
-			Valid: true,
-		},
-		RequesterUid: authStatus.PersonId,
+	suggestions, err := app.queries.GetSuggestionsByRegardingUser(r.Context(), pgtype.UUID{
+		Bytes: targetPersonUuid,
+		Valid: true,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

@@ -92,7 +92,7 @@ select
     from
       suggestion
     where
-      regarding = uid
+      regarding = person.uid
   ) as number_of_suggestions
 from
   person
@@ -138,30 +138,29 @@ delete from suggestion
 where
   uid = $1;
 
--- name: GetSuggestionsForPerson :many
+-- name: GetSuggestionsByRegardingUser :many
 select
   suggestion.uid,
   suggester,
-  suggestion.regarding,
-  suggestion.suggestion,
+  regarding,
+  suggestion,
   motivation,
-  rp.username as regarding_username,
-  sp.username as suggester_username,
+  person.username as regarding_username,
   (
     select
       count(*)
     from
       vote
     where
-      suggestion = suggestion.uid
+      target_suggestion = suggestion.uid
   ) as number_of_votes
 from
   suggestion
-  inner join person rp on suggestion.regarding = rp.uid
-  inner join person sp on suggestion.suggester = sp.uid
+  inner join person on person.uid = suggestion.suggester
 where
-  suggestion.regarding::text = @regarding_uid
-  and suggestion.regarding::text != @requester_uid;
+  suggestion.regarding = $1
+order by
+  number_of_votes desc;
 
 -- These two will be wrapped in a transaction block later.
 -- name: CreateVote :one

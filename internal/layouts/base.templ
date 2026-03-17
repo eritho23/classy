@@ -124,28 +124,35 @@ templ SuggestionSubmitPage(authenticationStatus middleware.AuthenticationStatus,
 	}
 }
 
-templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsForPersonRow) {
+templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsByRegardingUserRow) {
 	@Base("Classy: Suggestions for "+target.Username, authenticationStatus) {
 		<h1>Suggestions for { target.Username }</h1>
-		<table>
-			<tr>
-				<th>Suggestion by</th>
-				<th>Suggestion (Klassens...)</th>
-				<th>Number of votes</th>
-			</tr>
-			for _, suggestion := range suggestions {
+		if len(suggestions) > 0 {
+			<table>
 				<tr>
-					<td>
-						{ suggestion.SuggesterUsername }
-					</td>
-					<td>
-						{ suggestion.Suggestion.String }
-					</td>
-					<td>
-						{ suggestion.NumberOfVotes }
-					</td>
+					<th>Suggestion by</th>
+					<th>Suggestion (Klassens...)</th>
+					<th>Number of votes</th>
 				</tr>
-			}
-		</table>
+				for _, suggestion := range suggestions {
+					<tr>
+						<td>
+							{ suggestion.RegardingUsername }
+						</td>
+						<td>
+							{ suggestion.Suggestion.String }
+						</td>
+						<td>
+							{ suggestion.NumberOfVotes }
+						</td>
+					</tr>
+				}
+			</table>
+		} else {
+			No suggestions yet.
+		}
+		<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", target.Grp, target.Uid) }>
+			Make suggestion for { target.Username }.
+		</a>
 	}
 }

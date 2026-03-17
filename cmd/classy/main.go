@@ -10,11 +10,9 @@ import (
 
 	"classy/internal/generated/database"
 	"classy/internal/handlers"
-	"classy/internal/hashing"
 	"classy/internal/middleware"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func main() {
@@ -41,27 +39,6 @@ func main() {
 
 	q := queries.New(db)
 	app := handlers.NewClassyApplication(q, db)
-
-	// BEGIN SEED BLOCK //
-	db.Exec(ctx, "delete from session; delete from person; delete from grp;")
-	grp, _ := q.CreateGroup(ctx, pgtype.Text{String: "230S", Valid: true})
-	hash, _ := hashing.GenerateNewHash([]byte("erre"))
-	q.CreatePerson(ctx, queries.CreatePersonParams{
-		Grp:          grp.Uid,
-		PasswordHash: hash,
-		Username:     "erre",
-	})
-	q.CreatePerson(ctx, queries.CreatePersonParams{
-		Grp:          grp.Uid,
-		PasswordHash: hash,
-		Username:     "erre2",
-	})
-	q.CreatePerson(ctx, queries.CreatePersonParams{
-		Grp:          grp.Uid,
-		PasswordHash: hash,
-		Username:     "erre3",
-	})
-	// END SEED BLOCK //
 
 	_, err = os.Stat(socketPath)
 	if err == nil {
