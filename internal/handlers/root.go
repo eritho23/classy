@@ -39,6 +39,7 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggest", app.GetGroupGroupIdPersonPersonIdSuggestHandler)
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggest", app.PostGroupGroupIdPersonPersonIdSuggestHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}", app.GetGroupGroupIdPersonPersonIdHandler)
+	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggestion/{suggestionId}", app.GetGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -464,5 +465,71 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.Respon
 	}, suggestions).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render suggestions for person page: %v", err)
+	}
+}
+
+func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	targetPersonId := r.PathValue("personId")
+	if targetPersonId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonUuid, err := uuid.Parse(targetPersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	targetPersonRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
+		Bytes: targetPersonUuid,
+		Valid: true,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if targetPersonRow.Uid.Bytes == authStatus.PersonId.Bytes {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestionId := r.PathValue("suggestionId")
+	if suggestionId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestionUuid, err := uuid.Parse(suggestionId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestion, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
+		Bytes: suggestionUuid,
+		Valid: true,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = layouts.SuggestionDetailPage(authStatus, queries.Person{
+		Uid:      targetPersonRow.Uid,
+		Username: targetPersonRow.Username,
+	}, queries.Person{
+		Uid:      authStatus.PersonId,
+		Username: authStatus.PersonName,
+	}, suggestion).Render(r.Context(), w)
+	if err != nil {
+		log.Printf("failed to render suggestion detail page: %v", err)
 	}
 }

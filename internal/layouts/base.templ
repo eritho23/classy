@@ -140,7 +140,9 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 							{ suggestion.RegardingUsername }
 						</td>
 						<td>
-							{ suggestion.Suggestion.String }
+							<a href={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s", target.Grp, target.Uid, suggestion.Uid) }>
+								{ suggestion.Suggestion.String }
+							</a>
 						</td>
 						<td>
 							{ suggestion.NumberOfVotes }
@@ -154,5 +156,15 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 		<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", target.Grp, target.Uid) }>
 			Make suggestion for { target.Username }.
 		</a>
+	}
+}
+
+templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.Person, suggester queries.Person, suggestion queries.Suggestion) {
+	@Base(fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username), authenticationStatus) {
+		<h1>{ fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username) }</h1>
+		<h2>{ suggestion.Suggestion.String }</h2>
+		<p>
+			{ suggestion.Motivation.String }
+		</p>
 	}
 }
