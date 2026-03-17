@@ -139,7 +139,7 @@ where
   uid = $1;
 
 -- name: GetSuggestionsForPerson :many
-select 
+select
   suggestion.uid,
   suggester,
   suggestion.regarding,
@@ -147,7 +147,14 @@ select
   motivation,
   rp.username as regarding_username,
   sp.username as suggester_username,
-  (select count(*) from vote where suggestion = suggestion.uid) as number_of_votes
+  (
+    select
+      count(*)
+    from
+      vote
+    where
+      suggestion = suggestion.uid
+  ) as number_of_votes
 from
   suggestion
   inner join person rp on suggestion.regarding = rp.uid
@@ -233,15 +240,16 @@ limit
   1;
 
 -- name: ExistsSuggestionOnTargetByUserById :one
-select exists (
-  select
-    1
-  from
-    suggestion
-    inner join person on suggestion.suggester = person.uid
-    inner join grp on grp.uid = person.grp
-  where
-    suggester = @suggester_uid
-    and regarding = @regarding_uid
-    and grp.uid = @group_uid
+select
+  exists (
+    select
+      1
+    from
+      suggestion
+      inner join person on suggestion.suggester = person.uid
+      inner join grp on grp.uid = person.grp
+    where
+      suggester = @suggester_uid
+      and regarding = @regarding_uid
+      and grp.uid = @group_uid
   ) as suggestion_exists;
