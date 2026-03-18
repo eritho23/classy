@@ -26,7 +26,6 @@
       then self.rev
       else "dirty";
   in {
-    formatter = eachSystem (pkgs: treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.wrapper);
     checks = eachSystem (pkgs: {
       formatting = treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.check self;
     });
@@ -56,6 +55,10 @@
         '';
       };
     });
+    formatter = eachSystem (pkgs: treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.wrapper);
+    nixosModules = {
+      classy = import ./nix/module.nix {};
+    };
     packages = eachSystem (pkgs: rec {
       classy = pkgs.callPackage ./default.nix {inherit rev;};
       default = classy;
