@@ -3,9 +3,9 @@ package layouts
 import (
 	"classy/internal/generated/database"
 	"classy/internal/middleware"
-)
 
-import "fmt"
+	"fmt"
+)
 
 templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
 	<!DOCTYPE html>
@@ -181,9 +181,27 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.Person, suggester queries.Person, suggestion queries.Suggestion) {
 	@Base(fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username), authenticationStatus) {
 		<h1>{ fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username) }</h1>
-		<h2>{ suggestion.Suggestion.String }</h2>
-		<p>
-			{ suggestion.Motivation.String }
-		</p>
+		<span>{ suggester.Uid.String() }</span>
+		<br/>
+		<span>{ authenticationStatus.PersonId.String() }</span>
+		<span>{ suggester.Uid.Bytes != authenticationStatus.PersonId.Bytes }</span>
+		if suggester.Uid.Bytes != authenticationStatus.PersonId.Bytes {
+			<h2>{ suggestion.Suggestion.String }</h2>
+			<p>
+				{ suggestion.Motivation.String }
+			</p>
+		} else {
+			<form method="POST">
+				<label for="suggestion-input">
+					Change klassens:
+				</label>
+				<input id="suggestion-input" value={ suggestion.Suggestion.String } name="suggestion"/>
+				<label for="motivation-textarea">
+					Change motivation:
+				</label>
+				<textarea id="motivation-textarea" value={ suggestion.Motivation.String } name="motivation"></textarea>
+				<button type="submit">Update suggestion</button>
+			</form>
+		}
 	}
 }

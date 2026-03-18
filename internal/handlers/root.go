@@ -41,6 +41,7 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggest", app.PostGroupGroupIdPersonPersonIdSuggestHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}", app.GetGroupGroupIdPersonPersonIdHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggestion/{suggestionId}", app.GetGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler)
+	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler)
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler)
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote/{voteId}/remove", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteVoteIdRemoveHandler)
 
@@ -538,6 +539,70 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 	if err != nil {
 		log.Printf("failed to render suggestion detail page: %v", err)
 	}
+}
+
+func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestionId := r.PathValue("suggestionId")
+	if suggestionId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestionUuid, err := uuid.Parse(suggestionId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
+		Bytes: suggestionUuid,
+		Valid: true,
+	})
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if authStatus.PersonId != suggestionRow.Suggester {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestion := r.FormValue("suggestion")
+	if suggestion == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	motivation := r.FormValue("motivation")
+
+	err = app.queries.UpdateSuggestion(r.Context(), queries.UpdateSuggestionParams{
+		Suggestion: pgtype.Text{
+			String: suggestion,
+			Valid:  true,
+		},
+		Motivation: pgtype.Text{
+			String: motivation,
+			Valid:  true,
+		},
+		Uid: suggestionRow.Uid,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
 }
 
 func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler(w http.ResponseWriter, r *http.Request) {
