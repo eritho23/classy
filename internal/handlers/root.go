@@ -482,29 +482,24 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 		return
 	}
 
-	targetPersonId := r.PathValue("personId")
-	if targetPersonId == "" {
+	regardingId := r.PathValue("personId")
+	if regardingId == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	targetPersonUuid, err := uuid.Parse(targetPersonId)
+	regardingUuid, err := uuid.Parse(regardingId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	targetPersonRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
-		Bytes: targetPersonUuid,
+	regardingRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
+		Bytes: regardingUuid,
 		Valid: true,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	if targetPersonRow.Uid.Bytes == authStatus.PersonId.Bytes {
-		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -520,7 +515,7 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 		return
 	}
 
-	suggestion, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
+	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
 		Bytes: suggestionUuid,
 		Valid: true,
 	})
@@ -529,13 +524,13 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 		return
 	}
 
-	err = layouts.SuggestionDetailPage(authStatus, queries.Person{
-		Uid:      targetPersonRow.Uid,
-		Username: targetPersonRow.Username,
-	}, queries.Person{
-		Uid:      authStatus.PersonId,
-		Username: authStatus.PersonName,
-	}, suggestion).Render(r.Context(), w)
+	suggesterRow, err := app.queries.GetPersonByUid(r.Context(), suggestionRow.Suggester)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = layouts.SuggestionDetailPage(authStatus, regardingRow, suggesterRow, suggestionRow).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render suggestion detail page: %v", err)
 	}
@@ -578,21 +573,21 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		return
 	}
 
-	suggestion := r.FormValue("suggestion")
-	if suggestion == "" {
+	newSuggestionValue := r.FormValue("suggestion")
+	if newSuggestionValue == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	motivation := r.FormValue("motivation")
+	newSuggestionMotivation := r.FormValue("motivation")
 
 	err = app.queries.UpdateSuggestion(r.Context(), queries.UpdateSuggestionParams{
 		Suggestion: pgtype.Text{
-			String: suggestion,
+			String: newSuggestionValue,
 			Valid:  true,
 		},
 		Motivation: pgtype.Text{
-			String: motivation,
+			String: newSuggestionMotivation,
 			Valid:  true,
 		},
 		Uid: suggestionRow.Uid,

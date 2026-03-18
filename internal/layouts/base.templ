@@ -178,10 +178,12 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 	}
 }
 
-templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.Person, suggester queries.Person, suggestion queries.Suggestion) {
+templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.GetPersonByUidRow, suggester queries.GetPersonByUidRow, suggestion queries.Suggestion) {
 	@Base(fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username), authenticationStatus) {
-		<h1>{ fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username) }</h1>
-		if (suggester.Uid.Valid && authenticationStatus.PersonId.Valid && (suggester.Uid.Bytes == authenticationStatus.PersonId.Bytes)) {
+		<h1>Suggestion for { regarding.Username }</h1>
+		<h2>By { suggester.Username }, currently logged in as { authenticationStatus.PersonName }</h2>
+		if authenticationStatus.PersonId == suggestion.Suggester {
+			<span>you can change</span>
 			<form method="POST">
 				<label for="suggestion-input">
 					Change klassens:
@@ -190,11 +192,13 @@ templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus,
 				<label for="motivation-textarea">
 					Change motivation:
 				</label>
-				<textarea id="motivation-textarea" value={ suggestion.Motivation.String } name="motivation"></textarea>
+				<textarea id="motivation-textarea" name="motivation">
+					{ suggestion.Motivation.String }
+				</textarea>
 				<button type="submit">Update suggestion</button>
 			</form>
 		} else {
-			<h2>{ suggestion.Suggestion.String }</h2>
+			<h3>{ suggestion.Suggestion.String }</h3>
 			<p>
 				{ suggestion.Motivation.String }
 			</p>
