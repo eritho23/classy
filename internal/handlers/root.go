@@ -225,6 +225,10 @@ func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *h
 			Valid: true,
 		},
 	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	if !groupRow.PersonPartOfGroup {
 		w.WriteHeader(http.StatusNotFound)
@@ -272,6 +276,10 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestHandler(w http
 			Valid: true,
 		},
 	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	if !groupRow.PersonPartOfGroup {
 		w.WriteHeader(http.StatusNotFound)
@@ -340,6 +348,10 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 			Valid: true,
 		},
 	})
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	if !groupRow.PersonPartOfGroup {
 		w.WriteHeader(http.StatusNotFound)
@@ -387,7 +399,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 
 	if suggestionExists {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("You have already made a suggestion for this person..."))
 		return
 	}
 
@@ -640,7 +651,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 
 	if authStatus.PersonId == suggestionRow.Suggester || authStatus.PersonId == suggestionRow.Regarding {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("You cannot create a vote now."))
 		return
 	}
 
@@ -685,6 +695,14 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		Bytes: voteUuid,
 		Valid: true,
 	})
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	if vote.Caster != authStatus.PersonId {
 		w.WriteHeader(http.StatusUnauthorized)

@@ -24,7 +24,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
-	defer db.Close(ctx)
 
 	q := queries.New(db)
 
@@ -35,24 +34,46 @@ func main() {
 
 	qTx := q.WithTx(tx)
 
-	defer tx.Commit(ctx)
+	_, err = tx.Exec(ctx, "delete from session; delete from person; delete from grp;")
+	if err != nil {
+		log.Printf("could not do initial cleaning of db before seed: %v", err)
+	}
 
-	tx.Exec(ctx, "delete from session; delete from person; delete from grp;")
-	grp, _ := qTx.CreateGroup(ctx, pgtype.Text{String: "230S", Valid: true})
-	hash, _ := hashing.GenerateNewHash([]byte("a"))
-	qTx.CreatePerson(ctx, queries.CreatePersonParams{
+	grp, err := qTx.CreateGroup(ctx, pgtype.Text{String: "230S", Valid: true})
+	if err != nil {
+		log.Printf("could not create seeded group: %v", err)
+	}
+
+	hash, err := hashing.GenerateNewHash([]byte("a"))
+	if err != nil {
+		log.Printf("could not generate hash: %v", err)
+	}
+
+	_, err1 := qTx.CreatePerson(ctx, queries.CreatePersonParams{
 		Grp:          grp.Uid,
 		PasswordHash: hash,
 		Username:     "erre",
 	})
-	qTx.CreatePerson(ctx, queries.CreatePersonParams{
+	_, err2 := qTx.CreatePerson(ctx, queries.CreatePersonParams{
 		Grp:          grp.Uid,
 		PasswordHash: hash,
 		Username:     "ström",
 	})
-	qTx.CreatePerson(ctx, queries.CreatePersonParams{
+	_, err3 := qTx.CreatePerson(ctx, queries.CreatePersonParams{
 		Grp:          grp.Uid,
 		PasswordHash: hash,
 		Username:     "ian",
 	})
+
+	if err1 != nil || err2 != nil || err3 != nil {
+		log.Printf("could not create all three people: %v, %v, %v", err1, err2, err3)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("seeding transaction failed: %v", err)
+	}
+
+	if err := db.Close(ctx); err != nil {
+		log.Printf("failed to close db: %v", err)
+	}
 }

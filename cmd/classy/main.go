@@ -35,7 +35,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
-	defer db.Close(ctx)
 
 	q := queries.New(db)
 	app := handlers.NewClassyApplication(q, db)
@@ -52,7 +51,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create listener: %v.\n", err)
 	}
-	defer listener.Close()
 
 	mux := http.NewServeMux()
 	app.RegisterRouteHandlers(mux)
@@ -61,5 +59,13 @@ func main() {
 
 	if err := http.Serve(listener, muxWithMiddleware); err != nil {
 		log.Fatal(err)
+	}
+
+	if err := db.Close(ctx); err != nil {
+		log.Printf("failed to close db: %v", err)
+	}
+
+	if err := listener.Close(); err != nil {
+		log.Printf("failed to close listener: %v", err)
 	}
 }
