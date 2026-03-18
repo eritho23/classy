@@ -181,16 +181,7 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.Person, suggester queries.Person, suggestion queries.Suggestion) {
 	@Base(fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username), authenticationStatus) {
 		<h1>{ fmt.Sprintf("Suggestion by %s for %s", suggester.Username, regarding.Username) }</h1>
-		<span>{ suggester.Uid.String() }</span>
-		<br/>
-		<span>{ authenticationStatus.PersonId.String() }</span>
-		<span>{ suggester.Uid.Bytes != authenticationStatus.PersonId.Bytes }</span>
-		if suggester.Uid.Bytes != authenticationStatus.PersonId.Bytes {
-			<h2>{ suggestion.Suggestion.String }</h2>
-			<p>
-				{ suggestion.Motivation.String }
-			</p>
-		} else {
+		if (suggester.Uid.Valid && authenticationStatus.PersonId.Valid && (suggester.Uid.Bytes == authenticationStatus.PersonId.Bytes)) {
 			<form method="POST">
 				<label for="suggestion-input">
 					Change klassens:
@@ -202,6 +193,11 @@ templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus,
 				<textarea id="motivation-textarea" value={ suggestion.Motivation.String } name="motivation"></textarea>
 				<button type="submit">Update suggestion</button>
 			</form>
+		} else {
+			<h2>{ suggestion.Suggestion.String }</h2>
+			<p>
+				{ suggestion.Motivation.String }
+			</p>
 		}
 	}
 }
