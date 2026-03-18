@@ -1,6 +1,9 @@
 package layouts
 
-import "classy/internal/middleware"
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+)
 
 import "fmt"
 
@@ -104,7 +107,7 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 								Suggest
 							</a>
 						} else {
-							<u>Suggest</u>
+							<s title="You cannot make suggestions for yourself.">Suggest</s>
 						}
 					</td>
 				</tr>
@@ -133,11 +136,12 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 					<th>Suggestion by</th>
 					<th>Suggestion (Klassens...)</th>
 					<th>Number of votes</th>
+					<th>Place vote</th>
 				</tr>
 				for _, suggestion := range suggestions {
 					<tr>
 						<td>
-							{ suggestion.RegardingUsername }
+							{ suggestion.SuggesterUsername }
 						</td>
 						<td>
 							<a href={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s", target.Grp, target.Uid, suggestion.Uid) }>
@@ -146,6 +150,21 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 						</td>
 						<td>
 							{ suggestion.NumberOfVotes }
+						</td>
+						<td>
+							if (!suggestion.RequesterVoteUid.Valid && authenticationStatus.PersonId != suggestion.Suggester) {
+								<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote", target.Grp, target.Uid, suggestion.Uid) }>
+									<button type="submit">Vote</button>
+								</form>
+							} else {
+								if suggestion.RequesterVoteTargetSuggestion == suggestion.Uid {
+									<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote/%s/remove", target.Grp, target.Uid, suggestion.Uid, suggestion.RequesterVoteUid) }>
+										<button type="submit">Remove vote</button>
+									</form>
+								} else {
+									<button disabled>Vote</button>
+								}
+							}
 						</td>
 					</tr>
 				}

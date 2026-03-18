@@ -31,6 +31,17 @@ where
 limit
   1;
 
+-- name: GetGroupByPersonUid :one
+select
+  grp.uid as group_uid
+from
+  grp
+  inner join person on person.grp = grp.uid
+where
+  person.uid = $1
+limit
+  1;
+
 -- name: CreatePerson :one
 insert into
   person (username, grp, password_hash)
@@ -142,10 +153,10 @@ where
 select
   suggestion.uid,
   suggester,
-  regarding,
+  suggestion.regarding,
   suggestion,
   motivation,
-  person.username as regarding_username,
+  person.username as suggester_username,
   (
     select
       count(*)
@@ -153,16 +164,19 @@ select
       vote
     where
       target_suggestion = suggestion.uid
-  ) as number_of_votes
+  ) as number_of_votes,
+  requester_vote.uid as requester_vote_uid,
+  requester_vote.target_suggestion as requester_vote_target_suggestion
 from
   suggestion
   inner join person on person.uid = suggestion.suggester
+  left join vote as requester_vote on requester_vote.target_suggestion = suggestion.uid
+  and requester_vote.caster = $2
 where
   suggestion.regarding = $1
 order by
   number_of_votes desc;
 
--- These two will be wrapped in a transaction block later.
 -- name: CreateVote :one
 insert into
   vote (caster, target_suggestion, regarding)
@@ -181,11 +195,22 @@ returning
   regarding,
   time;
 
--- name: DeleteVoteByCasterAndSuggestion :exec
+-- name: GetVoteByUid :one
+select
+  uid,
+  caster,
+  target_suggestion,
+  regarding,
+  time
+from
+  vote
+where
+  uid = $1;
+
+-- name: DeleteVoteByUid :exec
 delete from vote
 where
-  caster = $1
-  and target_suggestion = $2;
+  uid = $1;
 
 -- name: CreateSession :one
 insert into

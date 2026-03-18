@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -40,6 +41,8 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggest", app.PostGroupGroupIdPersonPersonIdSuggestHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}", app.GetGroupGroupIdPersonPersonIdHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggestion/{suggestionId}", app.GetGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler)
+	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler)
+	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote/{voteId}/remove", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteVoteIdRemoveHandler)
 
 	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
@@ -382,8 +385,8 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 	}
 
 	if suggestionExists {
-		w.Write([]byte("You have already made a suggestion for this person..."))
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("You have already made a suggestion for this person..."))
 		return
 	}
 
@@ -449,9 +452,12 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.Respon
 		return
 	}
 
-	suggestions, err := app.queries.GetSuggestionsByRegardingUser(r.Context(), pgtype.UUID{
-		Bytes: targetPersonUuid,
-		Valid: true,
+	suggestions, err := app.queries.GetSuggestionsByRegardingUser(r.Context(), queries.GetSuggestionsByRegardingUserParams{
+		Caster: authStatus.PersonId,
+		Regarding: pgtype.UUID{
+			Bytes: targetPersonUuid,
+			Valid: true,
+		},
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -532,4 +538,104 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 	if err != nil {
 		log.Printf("failed to render suggestion detail page: %v", err)
 	}
+}
+
+func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	suggestionId := r.PathValue("suggestionId")
+	if suggestionId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestionUuid, err := uuid.Parse(suggestionId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
+		Bytes: suggestionUuid,
+		Valid: true,
+	})
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	groupId, err := app.queries.GetGroupByPersonUid(r.Context(), authStatus.PersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if authStatus.PersonId == suggestionRow.Suggester || authStatus.PersonId == suggestionRow.Regarding {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("You cannot create a vote now."))
+		return
+	}
+
+	_, err = app.queries.CreateVote(r.Context(), queries.CreateVoteParams{
+		Caster:           authStatus.PersonId,
+		TargetSuggestion: suggestionRow.Uid,
+	})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s", groupId, suggestionRow.Regarding), http.StatusSeeOther)
+}
+
+func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteVoteIdRemoveHandler(w http.ResponseWriter, r *http.Request) {
+	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
+	if !authStatus.IsAuthenticated {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	groupId, err := app.queries.GetGroupByPersonUid(r.Context(), authStatus.PersonId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	voteId := r.PathValue("voteId")
+	if voteId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	voteUuid, err := uuid.Parse(voteId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	vote, err := app.queries.GetVoteByUid(r.Context(), pgtype.UUID{
+		Bytes: voteUuid,
+		Valid: true,
+	})
+
+	if vote.Caster != authStatus.PersonId {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	err = app.queries.DeleteVoteByUid(r.Context(), vote.Uid)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s", groupId, vote.Regarding), http.StatusSeeOther)
 }
