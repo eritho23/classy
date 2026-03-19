@@ -35,4 +35,9 @@
     ];
     includes = ["*.sql"];
   };
+
+  settings.formatter."nginxfmt" = {
+    command = lib.getExe pkgs.nginx-config-formatter;
+    includes = ["*nginx.conf"];
+  };
 }

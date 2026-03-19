@@ -1,0 +1,13 @@
+body {
+  font-family: system-ui, sans-serif;
+  font-weight: normal;
+}
+
+main > nav {
+  display: flex;
+  flex-direction: row;
+}
+
+nav > a {
+  background-color: red;
+}

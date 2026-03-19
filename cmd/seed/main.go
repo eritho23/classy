@@ -64,9 +64,14 @@ func main() {
 		PasswordHash: hash,
 		Username:     "ian",
 	})
+	_, err4 := qTx.CreatePerson(ctx, queries.CreatePersonParams{
+		Grp:          grp.Uid,
+		PasswordHash: hash,
+		Username:     "smul",
+	})
 
-	if err1 != nil || err2 != nil || err3 != nil {
-		log.Printf("could not create all three people: %v, %v, %v", err1, err2, err3)
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		log.Printf("could not create all three people: %v, %v, %v, %v", err1, err2, err3, err4)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
