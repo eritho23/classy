@@ -7,7 +7,7 @@ tmp_dir = "tmp"
   bin = "./target/classy"
   full_bin = "./target/classy"
   include_ext = ["go", "templ", "html", "css", "js"]
-  exclude_regex = ["_templ\\.go$"]
+  exclude_regex = ["_templ\\.go$", "static/stylesheet.css"]
   exclude_dir = [
     "target",
     "tmp",

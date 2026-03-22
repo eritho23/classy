@@ -1,6 +1,14 @@
+:root {
+  --color-text: oklch(0.11 0.1332 271.46);
+  --color-background: oklch(0.9970 0.06 110.34);
+}
+
 body {
   font-family: system-ui, sans-serif;
   font-weight: normal;
+
+  background-color: var(--color-background);
+  color: var(--color-text);
 }
 
 main > nav {
@@ -10,4 +18,20 @@ main > nav {
 
 nav > a {
   background-color: red;
+}
+
+form.login-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+form.login-form > input {
+  padding: .70em;
+  margin: .70em .40em;
+  font-size: 12pt;
+}
+
+form.login-form > button {
+  width: 6em;
 }
