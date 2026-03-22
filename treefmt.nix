@@ -8,6 +8,7 @@
   programs = {
     alejandra.enable = true;
     beautysh.enable = true;
+    biome.enable = true;
     deadnix.enable = true;
     gofumpt.enable = true;
     mbake.enable = true;

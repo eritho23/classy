@@ -1,37 +1,139 @@
 :root {
-  --color-text: oklch(0.11 0.1332 271.46);
-  --color-background: oklch(0.9970 0.06 110.34);
+	--color-text: oklch(0.11 0.1332 271.46);
+	--color-background: #fefefe;
+	--color-text-muted: oklch(0.55 0.06 271.46);
+	--color-text-hover: oklch(0.2 0.12 271.46);
+	--color-error-bg: oklch(0.92 0.06 110.34);
+}
+
+* {
+	box-sizing: border-box;
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  font-weight: normal;
-
-  background-color: var(--color-background);
-  color: var(--color-text);
+	font-family: system-ui, sans-serif;
+	font-weight: 400;
+	background-color: var(--color-background);
+	color: var(--color-text);
+	margin: 0;
+	padding: 0;
 }
 
-main > nav {
-  display: flex;
-  flex-direction: row;
+header > nav {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 2rem;
+	height: 52px;
+	border-bottom: 1.5px solid var(--color-text);
 }
 
-nav > a {
-  background-color: red;
+td,
+th {
+	padding: 0.45em;
+	text-align: left;
 }
 
-form.login-form {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.nav-brand {
+	font-size: 13pt;
+	font-weight: 600;
+	letter-spacing: 0.04em;
 }
 
-form.login-form > input {
-  padding: .70em;
-  margin: .70em .40em;
-  font-size: 12pt;
+.nav-links {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
 }
 
-form.login-form > button {
-  width: 6em;
+.nav-links a {
+	font-size: 11pt;
+	letter-spacing: 0.02em;
+}
+
+main {
+	padding: 3rem 1.5rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+a {
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.login-error {
+	width: 100%;
+	max-width: 320px;
+	border: 1.5px solid var(--color-text);
+	background-color: var(--color-error-bg);
+	padding: 0.6em 0.8em;
+	font-size: 12pt;
+	margin-bottom: 0.6em;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	padding: 1.5rem;
+	border: 2px solid var(--color-text);
+	width: 100%;
+	max-width: 320px;
+}
+
+form input,
+form textarea,
+button {
+	font-family: system-ui, sans-serif;
+	font-size: 13pt;
+	padding: 0.3em 0.6em;
+	margin-bottom: 0.6em;
+	border: none;
+	outline: none;
+	background: var(--color-text);
+	color: var(--color-background);
+}
+
+form span {
+	padding: 0.3em 0.6em;
+	margin-bottom: 0.6em;
+	border: 2px solid var(--color-text);
+}
+
+form input::placeholder {
+	color: var(--color-text-muted);
+}
+
+form button {
+	cursor: pointer;
+	letter-spacing: 0.02em;
+	margin-bottom: 0;
+}
+
+form button:hover {
+	background: var(--color-text-hover);
+}
+
+@media (max-width: 480px) {
+	main > nav {
+		padding: 0 1rem;
+	}
+
+	.nav-links {
+		gap: 1.25rem;
+	}
+
+	.nav-brand {
+		font-size: 12pt;
+	}
+
+	main {
+		padding: 2rem 1rem;
+	}
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -44,20 +43,6 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler)
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler)
 	router.HandleFunc("POST /group/{groupId}/person/{personId}/suggestion/{suggestionId}/vote/{voteId}/remove", app.PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteVoteIdRemoveHandler)
-
-	router.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
-		if !authStatus.IsAuthenticated {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		} else {
-			w.WriteHeader(http.StatusOK)
-			_, err := fmt.Fprintf(w, "OK for user: %s", authStatus.PersonName)
-			if err != nil {
-				slog.Warn("Error in writing health string???")
-			}
-		}
-	})
 }
 
 func (app *ClassyApplication) GetRootHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,14 +81,14 @@ func (app *ClassyApplication) GetLoginHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-const incorrectCredentialsMsg = "invalid credentials"
+const incorrectCredentialsMsg = "Ogiltiga inloggningsuppgifter."
 
 func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Request) {
 	providedUsername := r.FormValue("username")
 	providedPassword := r.FormValue("password")
 	if providedUsername == "" || providedPassword == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		err := layouts.LoginPage("both username and password must be provided", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err := layouts.LoginPage("Både användarnamn och lösenord måste anges.", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}

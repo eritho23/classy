@@ -39,6 +39,7 @@
           gosec
           go-tools
           helix
+          minify
           nginx
           nixd
           pdpmake
