@@ -5,6 +5,7 @@
   sqlc,
   templ,
   pdpmake,
+  minify,
 }:
 buildGoModule {
   pname = "classy";
@@ -22,12 +23,16 @@ buildGoModule {
     sqlc
     templ
     pdpmake
+    minify
   ];
 
   preBuild = ''
-    sqlc generate
-    sqlc generate
     pdpmake templ sqlc
+  '';
+
+  postInstall = ''
+    mkdir -p "$out/static"
+    minify ./static/stylesheet.css > "$out/static/stylesheet.css"
   '';
 
   meta = {
