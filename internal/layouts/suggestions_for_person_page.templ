@@ -1,0 +1,60 @@
+package layouts
+
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+
+	"fmt"
+)
+
+templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsByRegardingUserRow) {
+	@Base("Classy: Förslag för "+target.Username, authenticationStatus) {
+		<a href={ fmt.Sprintf("/group/%s", target.Grp) }>Tillbaka till grupp</a>
+		<h1>Förslag för { target.Username }</h1>
+		if len(suggestions) > 0 {
+			<table>
+				<tr>
+					<th>Förslag av</th>
+					<th>Förslag (Klassens...)</th>
+					<th>Antal röster</th>
+					<th>Rösta</th>
+				</tr>
+				for _, suggestion := range suggestions {
+					<tr>
+						<td>
+							{ suggestion.SuggesterUsername }
+						</td>
+						<td>
+							<a href={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s", target.Grp, target.Uid, suggestion.Uid) }>
+								{ suggestion.Suggestion.String }
+							</a>
+						</td>
+						<td>
+							{ suggestion.NumberOfVotes }
+						</td>
+						<td>
+							if (!suggestion.RequesterVoteUid.Valid && authenticationStatus.PersonId != suggestion.Suggester) {
+								<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote", target.Grp, target.Uid, suggestion.Uid) }>
+									<button type="submit">Rösta</button>
+								</form>
+							} else {
+								if suggestion.RequesterVoteTargetSuggestion == suggestion.Uid {
+									<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote/%s/remove", target.Grp, target.Uid, suggestion.Uid, suggestion.RequesterVoteUid) }>
+										<button type="submit">Ta bort röst</button>
+									</form>
+								} else {
+									<button disabled title="Du måste ta bort din gamla röst innan du kan rösta på ett annat förslag.">Rösta</button>
+								}
+							}
+						</td>
+					</tr>
+				}
+			</table>
+		} else {
+			Inga förslag ännu.
+		}
+		<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", target.Grp, target.Uid) }>
+			Skapa förslag för { target.Username }.
+		</a>
+	}
+}

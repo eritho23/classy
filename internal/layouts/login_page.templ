@@ -1,0 +1,18 @@
+package layouts
+
+import "classy/internal/middleware"
+
+templ LoginPage(loginError string, authenticationStatus middleware.AuthenticationStatus) {
+	@Base("Classy: Inlogging", authenticationStatus) {
+		if loginError != "" {
+			<div>
+				{ loginError }
+			</div>
+		}
+		<form method="post" class="login-form">
+			<input type="text" name="username" placeholder="Användarnamn"/>
+			<input type="password" name="password" placeholder="Lösenord"/>
+			<button type="submit">Logga in</button>
+		</form>
+	}
+}

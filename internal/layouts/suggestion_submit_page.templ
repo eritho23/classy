@@ -1,0 +1,17 @@
+package layouts
+
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+)
+
+templ SuggestionSubmitPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person) {
+	@Base("Classy: Föreslå tallrik för "+target.Username, authenticationStatus) {
+		<form method="post" class="login-form">
+			<input value="Klassens" name="value"/>
+			<textarea name="motivation" placeholder="Preliminär motivering"></textarea>
+			<span>Vem som gjort förslaget syns för alla.</span>
+			<button type="submit">Skicka</button>
+		</form>
+	}
+}

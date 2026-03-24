@@ -1,0 +1,25 @@
+package layouts
+
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+)
+
+templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *queries.Grp) {
+	@Base("Classy", authenticationStatus) {
+		<h1>Välkommen till Classy</h1>
+		<p>
+			Föreslå och rösta på tallrikar till Studenten™.
+		</p>
+		if authenticationStatus.IsAuthenticated && grp != nil {
+			<h2>Gå till din grupp</h2>
+			<a class="startpage-group-link" href={ "/group/" + grp.Uid.String() }>
+				{ grp.Name.String }
+			</a>
+		} else {
+			<a href="/login">
+				Logga in för att börja.
+			</a>
+		}
+	}
+}

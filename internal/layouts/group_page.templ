@@ -1,0 +1,47 @@
+package layouts
+
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+
+	"fmt"
+)
+
+templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp queries.Grp, students []queries.GetStudentsAndSuggestionCountsByGrpRow) {
+	@Base("Classy: "+grp.Name.String, authenticationStatus) {
+		<table>
+			<tr>
+				<th>Namn</th>
+				<th>Antal förslag</th>
+				<th>Nytt förslag</th>
+			</tr>
+			for _, item := range students {
+				<tr>
+					<td>
+						if authenticationStatus.PersonId == item.Uid {
+							{ item.Username } (du)
+						} else {
+							<a href={ fmt.Sprintf("/group/%s/person/%s", grp.Uid, item.Uid) }>{ item.Username }</a>
+						}
+					</td>
+					<td>
+						if authenticationStatus.PersonId != item.Uid {
+							{ item.NumberOfSuggestions }
+						} else {
+							<i>dold</i>
+						}
+					</td>
+					<td>
+						if authenticationStatus.PersonId != item.Uid {
+							<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", grp.Uid, item.Uid) }>
+								Föreslå
+							</a>
+						} else {
+							<s title="Du kan inte föreslå för dig själv.">Föreslå</s>
+						}
+					</td>
+				</tr>
+			}
+		</table>
+	}
+}

@@ -1,0 +1,35 @@
+package layouts
+
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+
+	"fmt"
+)
+
+templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.GetPersonByUidRow, suggester queries.GetPersonByUidRow, suggestion queries.Suggestion) {
+	@Base(fmt.Sprintf("Förslag av %s för %s", suggester.Username, regarding.Username), authenticationStatus) {
+		<h1>Förslag för { regarding.Username }</h1>
+		<h2>Av { suggester.Username }</h2>
+		if authenticationStatus.PersonId == suggestion.Suggester {
+			<form method="POST">
+				<label for="suggestion-input">
+					Ändra klassens:
+				</label>
+				<input id="suggestion-input" value={ suggestion.Suggestion.String } name="suggestion"/>
+				<label for="motivation-textarea">
+					Ändra motivering:
+				</label>
+				<textarea id="motivation-textarea" name="motivation">
+					{ suggestion.Motivation.String }
+				</textarea>
+				<button type="submit">Uppdatera förslag</button>
+			</form>
+		} else {
+			<h3>{ suggestion.Suggestion.String }</h3>
+			<p>
+				{ suggestion.Motivation.String }
+			</p>
+		}
+	}
+}
