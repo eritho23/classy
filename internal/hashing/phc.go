@@ -78,21 +78,21 @@ func parsePhcString(inp string) (*Argon2IdHash, error) {
 
 	returnValue.Version = int(versionParsed)
 
-	memoryParsed, err := strconv.ParseInt(string(captureGroups[2]), 10, 0)
+	memoryParsed, err := strconv.ParseUint(string(captureGroups[2]), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse memory parameter: %v", err)
 	}
 
 	returnValue.Memory = uint32(memoryParsed)
 
-	timeParsed, err := strconv.ParseInt(string(captureGroups[3]), 10, 0)
+	timeParsed, err := strconv.ParseUint(string(captureGroups[3]), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse time parameter: %v", err)
 	}
 
 	returnValue.Time = uint32(timeParsed)
 
-	threadsParsed, err := strconv.ParseInt(string(captureGroups[4]), 10, 0)
+	threadsParsed, err := strconv.ParseUint(string(captureGroups[4]), 10, 8)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse threads parameter: %v", err)
 	}

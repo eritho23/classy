@@ -81,9 +81,12 @@ func (app *ClassyApplication) GetLoginHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-const incorrectCredentialsMsg = "Ogiltiga inloggningsuppgifter."
+const invalidLoginMsg = "Ogiltiga inloggningsuppgifter."
+const maxFormBodyBytes int64 = 1 << 20
 
 func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodyBytes)
+
 	providedUsername := r.FormValue("username")
 	providedPassword := r.FormValue("password")
 	if providedUsername == "" || providedPassword == "" {
@@ -98,7 +101,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	personRow, err := app.queries.GetPersonPasswordHashByUsername(r.Context(), providedUsername)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		err = layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}
@@ -108,7 +111,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	match, err := hashing.CheckPassword(personRow.PasswordHash, []byte(providedPassword))
 	if err != nil || !match {
 		w.WriteHeader(http.StatusUnauthorized)
-		err = layouts.LoginPage(incorrectCredentialsMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}
@@ -313,6 +316,8 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodyBytes)
 
 	groupId := r.PathValue("groupId")
 	if groupId == "" {
@@ -538,6 +543,8 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodyBytes)
 
 	suggestionId := r.PathValue("suggestionId")
 	if suggestionId == "" {

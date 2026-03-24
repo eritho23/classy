@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"classy/internal/generated/database"
 	"classy/internal/handlers"
@@ -56,8 +57,15 @@ func main() {
 	app.RegisterRouteHandlers(mux)
 
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
+	server := &http.Server{
+		Handler:           muxWithMiddleware,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
-	if err := http.Serve(listener, muxWithMiddleware); err != nil {
+	if err := server.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
 
