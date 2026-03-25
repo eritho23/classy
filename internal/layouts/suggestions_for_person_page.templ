@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsByRegardingUserRow) {
+templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsByRegardingUserInGroupRow) {
 	@Base("Classy: Förslag för "+target.Username, authenticationStatus) {
 		<a href={ fmt.Sprintf("/group/%s", target.Grp) }>Tillbaka till grupp</a>
 		<h1>Förslag för { target.Username }</h1>

@@ -9,7 +9,6 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -20,65 +19,26 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestHandler(w http
 		return
 	}
 
-	groupId := r.PathValue("groupId")
-	if groupId == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	groupRow, ok := app.requireGroupMembership(w, r, authStatus)
+	if !ok {
 		return
 	}
 
-	groupUuid, err := uuid.Parse(groupId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	targetPersonRow, ok := app.requireTargetPersonInGroup(w, r, groupRow.Uid)
+	if !ok {
 		return
 	}
 
-	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupUid(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupUidParams{
-		PersonUid: authStatus.PersonId,
-		GroupUid: pgtype.UUID{
-			Bytes: groupUuid,
-			Valid: true,
-		},
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	if !groupRow.PersonPartOfGroup {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	targetPersonId := r.PathValue("personId")
-	if targetPersonId == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	targetPersonUuid, err := uuid.Parse(targetPersonId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	personRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
-		Bytes: targetPersonUuid,
-		Valid: true,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	if personRow.Uid.Bytes == authStatus.PersonId.Bytes {
+	if uuidEqual(targetPersonRow.Uid, authStatus.PersonId) {
+		groupId := r.PathValue("groupId")
 		http.Redirect(w, r, fmt.Sprintf("/group/%s", groupId), http.StatusSeeOther)
 		return
 	}
 
-	err = layouts.SuggestionSubmitPage(authStatus, queries.Person{
-		Uid:      personRow.Uid,
-		Username: personRow.Username,
-		Grp:      personRow.Grp,
+	err := layouts.SuggestionSubmitPage(authStatus, queries.Person{
+		Uid:      targetPersonRow.Uid,
+		Username: targetPersonRow.Username,
+		Grp:      targetPersonRow.Grp,
 	}).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render suggestion page: %v", err)
@@ -94,57 +54,23 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodyBytes)
 
-	groupId := r.PathValue("groupId")
-	if groupId == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	groupRow, ok := app.requireGroupMembership(w, r, authStatus)
+	if !ok {
 		return
 	}
 
-	groupUuid, err := uuid.Parse(groupId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	targetPersonUUID, ok := parsePathUUID(w, r, "personId")
+	if !ok {
 		return
 	}
 
-	groupRow, err := app.queries.GetGroupAndPersonPartOfGroupByGroupUid(r.Context(), queries.GetGroupAndPersonPartOfGroupByGroupUidParams{
-		PersonUid: authStatus.PersonId,
-		GroupUid: pgtype.UUID{
-			Bytes: groupUuid,
-			Valid: true,
-		},
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+	targetPersonRow, ok := app.requireTargetPersonInGroup(w, r, groupRow.Uid)
+	if !ok {
 		return
 	}
 
-	if !groupRow.PersonPartOfGroup {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	targetPersonId := r.PathValue("personId")
-	if targetPersonId == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	targetPersonUuid, err := uuid.Parse(targetPersonId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	personRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
-		Bytes: targetPersonUuid,
-		Valid: true,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	if personRow.Uid.Bytes == authStatus.PersonId.Bytes {
+	if uuidEqual(targetPersonRow.Uid, authStatus.PersonId) {
+		groupId := r.PathValue("groupId")
 		http.Redirect(w, r, fmt.Sprintf("/group/%s", groupId), http.StatusSeeOther)
 		return
 	}
@@ -153,7 +79,7 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 		SuggesterUid: authStatus.PersonId,
 		RegardingUid: pgtype.UUID{
 			Valid: true,
-			Bytes: targetPersonUuid,
+			Bytes: targetPersonUUID,
 		},
 		GroupUid: groupRow.Uid,
 	})
@@ -177,7 +103,7 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 		Suggester: authStatus.PersonId,
 		Regarding: pgtype.UUID{
 			Valid: true,
-			Bytes: targetPersonUuid,
+			Bytes: targetPersonUUID,
 		},
 		Suggestion: pgtype.Text{
 			String: suggestionValue,
@@ -193,5 +119,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w htt
 		return
 	}
 
+	groupId := r.PathValue("groupId")
 	http.Redirect(w, r, fmt.Sprintf("/group/%s/person/%s", groupId, suggestion.Regarding), http.StatusSeeOther)
 }

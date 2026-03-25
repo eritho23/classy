@@ -8,7 +8,6 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -19,38 +18,33 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.Respon
 		return
 	}
 
-	targetPersonId := r.PathValue("personId")
-	if targetPersonId == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	groupRow, ok := app.requireGroupMembership(w, r, authStatus)
+	if !ok {
 		return
 	}
 
-	targetPersonUuid, err := uuid.Parse(targetPersonId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	targetPersonUUID, ok := parsePathUUID(w, r, "personId")
+	if !ok {
 		return
 	}
 
-	targetPersonRow, err := app.queries.GetPersonByUid(r.Context(), pgtype.UUID{
-		Bytes: targetPersonUuid,
-		Valid: true,
-	})
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+	targetPersonRow, ok := app.requireTargetPersonInGroup(w, r, groupRow.Uid)
+	if !ok {
 		return
 	}
 
-	if targetPersonRow.Uid.Bytes == authStatus.PersonId.Bytes {
+	if uuidEqual(targetPersonRow.Uid, authStatus.PersonId) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	suggestions, err := app.queries.GetSuggestionsByRegardingUser(r.Context(), queries.GetSuggestionsByRegardingUserParams{
+	suggestions, err := app.queries.GetSuggestionsByRegardingUserInGroup(r.Context(), queries.GetSuggestionsByRegardingUserInGroupParams{
 		Caster: authStatus.PersonId,
-		Regarding: pgtype.UUID{
-			Bytes: targetPersonUuid,
+		RegardingUid: pgtype.UUID{
+			Bytes: targetPersonUUID,
 			Valid: true,
 		},
+		GroupUid: groupRow.Uid,
 	})
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

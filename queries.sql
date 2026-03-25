@@ -177,6 +177,37 @@ where
 order by
   number_of_votes desc;
 
+-- name: GetSuggestionsByRegardingUserInGroup :many
+select
+  suggestion.uid,
+  suggester,
+  suggestion.regarding,
+  suggestion,
+  motivation,
+  person.username as suggester_username,
+  (
+    select
+      count(*)
+    from
+      vote
+    where
+      target_suggestion = suggestion.uid
+  ) as number_of_votes,
+  requester_vote.uid as requester_vote_uid,
+  requester_vote.target_suggestion as requester_vote_target_suggestion
+from
+  suggestion
+  inner join person on person.uid = suggestion.suggester
+  inner join person regarding_person on regarding_person.uid = suggestion.regarding
+  left join vote as requester_vote on requester_vote.target_suggestion = suggestion.uid
+  and requester_vote.caster = @caster
+where
+  suggestion.regarding = @regarding_uid
+  and person.grp = @group_uid
+  and regarding_person.grp = @group_uid
+order by
+  number_of_votes desc;
+
 -- name: CreateVote :one
 insert into
   vote (caster, target_suggestion, regarding)
