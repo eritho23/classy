@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"classy/internal/credentials"
 	queries "classy/internal/generated/database"
 	"classy/internal/hashing"
 
@@ -13,9 +14,13 @@ import (
 )
 
 func main() {
-	databaseUrl, exists := os.LookupEnv("DATABASE_URL")
-	if !exists {
-		log.Fatal("DATABASE_URL not set")
+	databaseUrl, err := credentials.ReadCredential("database_url")
+	if err != nil {
+		var ok bool
+		databaseUrl, ok = os.LookupEnv("DATABASE_URL")
+		if !ok {
+			log.Fatal("failed to lookup credentials dir and DATABASE_URL is not set")
+		}
 	}
 
 	ctx := context.Background()

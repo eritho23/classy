@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"classy/internal/credentials"
 	"classy/internal/generated/database"
 	"classy/internal/handlers"
 	"classy/internal/middleware"
@@ -22,9 +23,13 @@ func main() {
 
 	ctx := context.Background()
 
-	databaseUrl, exists := os.LookupEnv("DATABASE_URL")
-	if !exists {
-		log.Fatal("DATABASE_URL not set")
+	databaseUrl, err := credentials.ReadCredential("database_url")
+	if err != nil {
+		var ok bool
+		databaseUrl, ok = os.LookupEnv("DATABASE_URL")
+		if !ok {
+			log.Fatal("failed to lookup credentials dir and DATABASE_URL is not set")
+		}
 	}
 
 	socketPath, exists := os.LookupEnv("HTTP_SOCKET_PATH")
