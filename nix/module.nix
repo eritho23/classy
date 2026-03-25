@@ -70,6 +70,5 @@ in {
         Group = "classy";
       };
     };
-    users.groups."classy" = {};
   };
 }
