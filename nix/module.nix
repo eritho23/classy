@@ -70,6 +70,6 @@ in {
         Group = "classy";
       };
     };
+    users.groups."classy" = {};
   };
-  users.groups."classy" = {};
 }
