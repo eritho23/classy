@@ -14,8 +14,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const invalidLoginMsg = "Ogiltiga inloggningsuppgifter."
-const maxFormBodyBytes int64 = 1 << 20
+const (
+	invalidLoginMsg        = "Ogiltiga inloggningsuppgifter."
+	maxFormBodyBytes int64 = 1 << 20
+)
 
 func (app *ClassyApplication) GetLoginHandler(w http.ResponseWriter, r *http.Request) {
 	err := layouts.LoginPage("", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)

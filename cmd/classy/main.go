@@ -32,6 +32,11 @@ func main() {
 		log.Fatal("HTTP_SOCKET_PATH not set")
 	}
 
+	origin, exists := os.LookupEnv("ORIGIN")
+	if !exists {
+		log.Fatal("ORIGIN not set")
+	}
+
 	db, err := pgx.Connect(ctx, databaseUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
@@ -56,9 +61,19 @@ func main() {
 	mux := http.NewServeMux()
 	app.RegisterRouteHandlers(mux)
 
+	crossOriginProtection := http.NewCrossOriginProtection()
+	err = crossOriginProtection.AddTrustedOrigin(origin)
+	if err != nil {
+		log.Fatalf("Failed to configure trusted origin: %v", err)
+	}
+	crossOriginProtection.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("CSRF check failed"))
+	}))
+
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
 	server := &http.Server{
-		Handler:           muxWithMiddleware,
+		Handler:           crossOriginProtection.Handler(muxWithMiddleware),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      30 * time.Second,
