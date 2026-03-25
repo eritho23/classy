@@ -28,7 +28,7 @@ templ header(authenticationStatus middleware.AuthenticationStatus) {
 			if !authenticationStatus.IsAuthenticated {
 				<a href="/login">Logga in</a>
 			} else {
-				<form method="POST" action="/logout">
+				<form method="POST" action="/logout" class="action-form">
 					<button type="submit">Logga ut { authenticationStatus.PersonName }</button>
 				</form>
 			}

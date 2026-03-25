@@ -80,11 +80,22 @@ a:hover {
 
 form {
 	display: flex;
+}
+
+form:not(.action-form) {
+	display: flex;
 	flex-direction: column;
 	padding: 1.5rem;
 	border: 2px solid var(--color-text);
 	width: 100%;
 	max-width: 320px;
+}
+
+.action-form {
+	padding: 0;
+	border: none;
+	width: auto;
+	max-width: none;
 }
 
 form input,
@@ -100,7 +111,7 @@ button {
 	color: var(--color-background);
 }
 
-form span {
+form:not(.action-form) span {
 	padding: 0.3em 0.6em;
 	margin-bottom: 0.6em;
 	border: 2px solid var(--color-text);
@@ -113,6 +124,10 @@ form input::placeholder {
 form button {
 	cursor: pointer;
 	letter-spacing: 0.02em;
+	margin-bottom: 0;
+}
+
+.action-form button {
 	margin-bottom: 0;
 }
 
