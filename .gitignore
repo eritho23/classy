@@ -16,3 +16,5 @@ target
 *_templ.go
 
 air_tmp
+
+*.qcow2

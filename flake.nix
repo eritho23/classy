@@ -57,6 +57,15 @@
       };
     });
     formatter = eachSystem (pkgs: treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.wrapper);
+    nixosConfigurations = {
+      test-module = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./nix/configuration.nix
+          self.nixosModules.classy
+        ];
+      };
+    };
     nixosModules = {
       classy = import ./nix/module.nix {};
     };
