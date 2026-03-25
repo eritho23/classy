@@ -66,7 +66,10 @@ in {
         RuntimeDirectory = "classy";
         StateDirectory = "classy";
         WorkingDirectory = "%S/classy";
+        UMask = "007";
+        Group = "classy";
       };
     };
   };
+  users.groups."classy" = {};
 }
