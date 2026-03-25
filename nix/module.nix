@@ -26,6 +26,11 @@ in {
       type = types.path;
       description = "The path of a file containing the database URL.";
     };
+
+    httpOrigin = mkOption {
+      type = types.str;
+      description = "The HTTP origin where the app is served, used for CSRF protection.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -40,6 +45,7 @@ in {
       wantedBy = ["multi-user.target"];
       environment = {
         HTTP_SOCKET_PATH = cfg.socketPath;
+        ORIGIN = cfg.httpOrigin;
       };
       serviceConfig = {
         ExecStartPre = pkgs.writeShellScript "classy-exec-start-pre-migrate-up" ''
