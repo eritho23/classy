@@ -28,6 +28,7 @@ clean: postgres-clean nginx-clean
 	rm -rf ./target
 	find . -name '*_templ.go' -delete
 	-unlink ./tmp
+	rm -f *.qcow2
 
 templ:
 	templ generate

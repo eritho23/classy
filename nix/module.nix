@@ -14,7 +14,7 @@ in {
     enable = mkEnableOption "The classy service.";
 
     socketPath = mkOption {
-      default = "%t/http.sock";
+      default = "%t/classy/http.sock";
       type = types.oneOf [
         types.path
         types.str
@@ -49,7 +49,7 @@ in {
       };
       serviceConfig = {
         ExecStartPre = pkgs.writeShellScript "classy-exec-start-pre-migrate-up" ''
-          DATABASE_URL="$(cat $CREDENTIALS_DIRECTORY/database_url)" ${lib.getExe goMigratePkg} -path ${../migrations} -database $DATABASE_URL up
+          ${lib.getExe goMigratePkg} -path ${../migrations} -database "$(cat $CREDENTIALS_DIRECTORY/database_url)" up
         '';
         ExecStart = getExe classyPkg;
         DynamicUser = true;
