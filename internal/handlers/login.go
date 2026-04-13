@@ -85,6 +85,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 		HttpOnly: true,
 		Name:     "sessionid",
 		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 		Value:    sessionValueHex,
 	})
@@ -122,6 +123,7 @@ func (app *ClassyApplication) GetLogoutHandler(w http.ResponseWriter, r *http.Re
 		MaxAge:   -1,
 		Name:     "sessionid",
 		Path:     "/",
+		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 		Value:    "",
 	})
