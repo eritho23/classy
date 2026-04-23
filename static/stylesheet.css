@@ -59,6 +59,63 @@ main {
 	align-items: center;
 }
 
+.plate-title-container {
+	position: relative;
+	width: min(90vw, 680px);
+	margin: 0 0 1.5rem;
+}
+
+.plate-title-image {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.plate-title-text {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	margin: 0;
+	width: 44%;
+	max-height: 44%;
+	text-align: center;
+	line-height: 1.1;
+	font-size: clamp(1.05rem, 1.85vw, 1.75rem);
+	font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Marker Felt", "Trebuchet MS", cursive;
+	font-style: italic;
+	font-weight: 700;
+	color: #3e3a37;
+	text-shadow: 0 1px 0 #f9f5f0;
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 4;
+	line-clamp: 4;
+	overflow-wrap: anywhere;
+}
+
+.motivation-card {
+	width: min(90vw, 680px);
+	margin: 0 0 1.5rem;
+	padding: 1rem 1.25rem;
+	background: #ebe7e3;
+	border: 1px solid #b7afa8;
+	border-radius: 16px;
+	box-shadow:
+		0 10px 24px rgb(58 54 51 / 22%),
+		inset 0 0 0 2px #d7d1cb;
+}
+
+.motivation-card-text {
+	margin: 0;
+	font-size: clamp(1rem, 1.25vw, 1.1rem);
+	line-height: 1.5;
+	color: #3e3a37;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
 a {
 	color: var(--color-text);
 	text-decoration: none;
@@ -150,5 +207,11 @@ form button:hover {
 
 	main {
 		padding: 2rem 1rem;
+	}
+
+	.plate-title-text {
+		width: 50%;
+		max-height: 50%;
+		font-size: clamp(0.95rem, 4.45vw, 1.45rem);
 	}
 }

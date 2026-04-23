@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"time"
 
 	"classy/internal/credentials"
@@ -20,6 +21,38 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5"
 )
+
+func getCSRFTrustedOrigins(origin *url.URL) []string {
+	origins := map[string]struct{}{}
+
+	add := func(candidate string) {
+		if candidate == "" {
+			return
+		}
+		origins[candidate] = struct{}{}
+	}
+
+	hostname := origin.Hostname()
+	port := origin.Port()
+	add(origin.Host)
+	add(hostname)
+	if hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1" {
+		for _, alias := range []string{"localhost", "127.0.0.1", "::1"} {
+			add(alias)
+			if port != "" {
+				add(net.JoinHostPort(alias, port))
+			}
+		}
+	}
+
+	trustedOrigins := make([]string, 0, len(origins))
+	for allowedOrigin := range origins {
+		trustedOrigins = append(trustedOrigins, allowedOrigin)
+	}
+	sort.Strings(trustedOrigins)
+
+	return trustedOrigins
+}
 
 func getCSRFProtectionKey() []byte {
 	csrfAuthKey, err := credentials.ReadCredential("csrf_auth_key")
@@ -100,18 +133,41 @@ func main() {
 		log.Fatalf("Failed to configure trusted origin: %v", err)
 	}
 	crossOriginProtection.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Warn("cross-origin protection denied request",
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.String("host", r.Host),
+			slog.String("origin", r.Header.Get("Origin")),
+			slog.String("referer", r.Header.Get("Referer")),
+			slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
+		)
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("CSRF check failed"))
 	}))
 
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
+	trustedOrigins := getCSRFTrustedOrigins(parsedOrigin)
+	slog.Info("configured csrf trusted origins", slog.Any("trusted_origins", trustedOrigins))
 	csrfProtection := csrf.Protect(
 		getCSRFProtectionKey(),
 		csrf.Secure(parsedOrigin.Scheme == "https"),
 		csrf.SameSite(csrf.SameSiteStrictMode),
+		csrf.TrustedOrigins(trustedOrigins),
 		csrf.Path("/"),
 		csrf.HttpOnly(true),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reason := csrf.FailureReason(r)
+			slog.Warn("csrf token validation failed",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("host", r.Host),
+				slog.String("origin", r.Header.Get("Origin")),
+				slog.String("referer", r.Header.Get("Referer")),
+				slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
+				slog.Bool("x_csrf_token_present", r.Header.Get("X-CSRF-Token") != ""),
+				slog.Bool("form_csrf_token_present", r.PostFormValue("gorilla.csrf.Token") != ""),
+				slog.Any("reason", reason),
+			)
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("CSRF token check failed"))
 		})),
