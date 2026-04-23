@@ -64,6 +64,7 @@
       httpOrigin = "http://127.0.0.1:8080";
 
       databaseUrlPath = pkgs.writeText "connection-string" "postgres://classy:12345678@/classy?host=/run/postgresql";
+      csrfAuthKeyPath = pkgs.writeText "csrf-auth-key" "replace-with-a-strong-random-secret";
     };
 
     nginx = {

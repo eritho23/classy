@@ -5,7 +5,7 @@ _: {
   ...
 }: let
   cfg = config.services.classy;
-  inherit (lib) mkEnableOption mkOption mkIf types getExe;
+  inherit (lib) mkEnableOption mkOption mkIf types getExe optional;
   classyPkg = pkgs.callPackage ../default.nix {};
   goMigratePkg = pkgs.callPackage ./go-migrate.nix {};
   systemdServices = config.systemd.services;
@@ -25,6 +25,12 @@ in {
     databaseUrlPath = mkOption {
       type = types.path;
       description = "The path of a file containing the database URL.";
+    };
+
+    csrfAuthKeyPath = mkOption {
+      default = null;
+      type = types.nullOr types.path;
+      description = "Optional path of a file containing the CSRF auth key.";
     };
 
     httpOrigin = mkOption {
@@ -53,9 +59,11 @@ in {
         '';
         ExecStart = getExe classyPkg;
         DynamicUser = true;
-        LoadCredential = [
-          "database_url:${cfg.databaseUrlPath}"
-        ];
+        LoadCredential =
+          [
+            "database_url:${cfg.databaseUrlPath}"
+          ]
+          ++ optional (cfg.csrfAuthKeyPath != null) "csrf_auth_key:${cfg.csrfAuthKeyPath}";
         SystemCallFilter = "@system-service";
         RestrictAddressFamilies = [
           "AF_INET"

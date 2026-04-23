@@ -82,7 +82,9 @@ main {
 	text-align: center;
 	line-height: 1.1;
 	font-size: clamp(1.05rem, 1.85vw, 1.75rem);
-	font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Marker Felt", "Trebuchet MS", cursive;
+	font-family:
+		"Comic Sans MS", "Comic Sans", "Chalkboard SE", "Marker Felt",
+		"Trebuchet MS", cursive;
 	font-style: italic;
 	font-weight: 700;
 	color: #3e3a37;
