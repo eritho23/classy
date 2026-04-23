@@ -33,6 +33,7 @@
       default = pkgs.mkShell {
         packages = with pkgs; [
           air
+          authelia
           go
           golangci-lint
           gopls
@@ -45,6 +46,7 @@
           pdpmake
           (pkgs.callPackage ./nix/go-migrate.nix {})
           postgresql.out
+          pwgen
           sqlc
           sqlite
           templ

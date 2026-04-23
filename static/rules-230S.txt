@@ -1,0 +1,5 @@
+Regler för tjänsten och klassensomröstningen är:
+1. Vem som föreslagit något visas, så föreslå inget du inte hade sagt till en viss person fysiskt.
+2. Det är inte tillåtet att utnyttja tekniska sårbarheter i plattformen för att till exempel manipulera omröstningen. Om du hittar en sårbarhet, vänligen kontakta Eric.
+3. Denna tjänst är till för att man ska kunna ha lång betänketid och kunna skriva förslag hela tiden, men det slutgiltiga beslutet kommer att tas av den som faktiskt gör tallrikarna utifrån resultatet i omröstningen.
+4. Andreas kommer att granska alla förslag och motiveringar.
