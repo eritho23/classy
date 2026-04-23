@@ -5,9 +5,10 @@ import (
 	"classy/internal/middleware"
 )
 
-templ SuggestionSubmitPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person) {
-	@Base("Classy: Föreslå tallrik för "+target.Username, authenticationStatus) {
+templ SuggestionSubmitPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, csrfToken string) {
+	@Base("Classy: Föreslå tallrik för "+target.Username, authenticationStatus, csrfToken) {
 		<form method="post" class="login-form">
+			<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
 			<input value="Klassens" name="value"/>
 			<textarea name="motivation" placeholder="Preliminär motivering"></textarea>
 			<span>Vem som gjort förslaget syns för alla.</span>

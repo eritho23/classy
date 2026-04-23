@@ -11,6 +11,7 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
+	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -20,7 +21,7 @@ const (
 )
 
 func (app *ClassyApplication) GetLoginHandler(w http.ResponseWriter, r *http.Request) {
-	err := layouts.LoginPage("", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+	err := layouts.LoginPage("", middleware.GetAuthenticationStatusFromRequestContext(r), csrf.Token(r)).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render login page template: %v", err)
 	}
@@ -33,7 +34,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	providedPassword := r.FormValue("password")
 	if providedUsername == "" || providedPassword == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		err := layouts.LoginPage("Både användarnamn och lösenord måste anges.", middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err := layouts.LoginPage("Både användarnamn och lösenord måste anges.", middleware.GetAuthenticationStatusFromRequestContext(r), csrf.Token(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}
@@ -43,7 +44,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	personRow, err := app.queries.GetPersonPasswordHashByUsername(r.Context(), providedUsername)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r), csrf.Token(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}
@@ -53,7 +54,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	match, err := hashing.CheckPassword(personRow.PasswordHash, []byte(providedPassword))
 	if err != nil || !match {
 		w.WriteHeader(http.StatusUnauthorized)
-		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r)).Render(r.Context(), w)
+		err = layouts.LoginPage(invalidLoginMsg, middleware.GetAuthenticationStatusFromRequestContext(r), csrf.Token(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render login page template: %v", err)
 		}

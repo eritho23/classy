@@ -5,8 +5,8 @@ import (
 	"classy/internal/middleware"
 )
 
-templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *queries.Grp) {
-	@Base("Classy", authenticationStatus) {
+templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *queries.Grp, csrfToken string) {
+	@Base("Classy", authenticationStatus, csrfToken) {
 		<h1>Välkommen till Classy</h1>
 		<p>
 			Föreslå och rösta på tallrikar till Studenten™.

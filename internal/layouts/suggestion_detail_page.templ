@@ -7,12 +7,13 @@ import (
 	"fmt"
 )
 
-templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.GetPersonByUidRow, suggester queries.GetPersonByUidRow, suggestion queries.Suggestion) {
-	@Base(fmt.Sprintf("Förslag av %s för %s", suggester.Username, regarding.Username), authenticationStatus) {
+templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus, regarding queries.GetPersonByUidRow, suggester queries.GetPersonByUidRow, suggestion queries.Suggestion, csrfToken string) {
+	@Base(fmt.Sprintf("Förslag av %s för %s", suggester.Username, regarding.Username), authenticationStatus, csrfToken) {
 		<h1>Förslag för { regarding.Username }</h1>
 		<h2>Av { suggester.Username }</h2>
 		if authenticationStatus.PersonId == suggestion.Suggester {
 			<form method="POST">
+				<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
 				<label for="suggestion-input">
 					Ändra klassens:
 				</label>

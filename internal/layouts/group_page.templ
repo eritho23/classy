@@ -7,8 +7,8 @@ import (
 	"fmt"
 )
 
-templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp queries.Grp, students []queries.GetStudentsAndSuggestionCountsByGrpRow) {
-	@Base("Classy: "+grp.Name.String, authenticationStatus) {
+templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp queries.Grp, students []queries.GetStudentsAndSuggestionCountsByGrpRow, csrfToken string) {
+	@Base("Classy: "+grp.Name.String, authenticationStatus, csrfToken) {
 		<table>
 			<tr>
 				<th>Namn</th>

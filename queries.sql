@@ -136,6 +136,25 @@ from
 where
   uid = $1;
 
+-- name: GetSuggestionByUidInGroupRegarding :one
+select
+  suggestion.uid,
+  suggestion.suggester,
+  suggestion.regarding,
+  suggestion.suggestion,
+  suggestion.motivation
+from
+  suggestion
+  inner join person as suggester on suggester.uid = suggestion.suggester
+  inner join person as regarding_person on regarding_person.uid = suggestion.regarding
+where
+  suggestion.uid = @suggestion_uid
+  and suggestion.regarding = @regarding_uid
+  and suggester.grp = @group_uid
+  and regarding_person.grp = @group_uid
+limit
+  1;
+
 -- name: UpdateSuggestion :exec
 update suggestion
 set
@@ -237,6 +256,28 @@ from
   vote
 where
   uid = $1;
+
+-- name: GetVoteByUidInGroupRegardingSuggestion :one
+select
+  vote.uid,
+  vote.caster,
+  vote.target_suggestion,
+  vote.regarding,
+  vote.time
+from
+  vote
+  inner join suggestion on suggestion.uid = vote.target_suggestion
+  inner join person as suggester on suggester.uid = suggestion.suggester
+  inner join person as regarding_person on regarding_person.uid = suggestion.regarding
+where
+  vote.uid = @vote_uid
+  and vote.target_suggestion = @suggestion_uid
+  and vote.regarding = @regarding_uid
+  and suggestion.regarding = @regarding_uid
+  and suggester.grp = @group_uid
+  and regarding_person.grp = @group_uid
+limit
+  1;
 
 -- name: DeleteVoteByUid :exec
 delete from vote

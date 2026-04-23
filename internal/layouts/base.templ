@@ -2,7 +2,7 @@ package layouts
 
 import "classy/internal/middleware"
 
-templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
+templ Base(title string, authenticationStatus middleware.AuthenticationStatus, csrfToken string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -12,7 +12,7 @@ templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
 			<title>{ title }</title>
 		</head>
 		<body>
-			@header(authenticationStatus)
+			@header(authenticationStatus, csrfToken)
 			<main>
 				{ children... }
 			</main>
@@ -21,7 +21,7 @@ templ Base(title string, authenticationStatus middleware.AuthenticationStatus) {
 	</html>
 }
 
-templ header(authenticationStatus middleware.AuthenticationStatus) {
+templ header(authenticationStatus middleware.AuthenticationStatus, csrfToken string) {
 	<header>
 		<nav>
 			<a href="/">Start</a>
@@ -29,6 +29,7 @@ templ header(authenticationStatus middleware.AuthenticationStatus) {
 				<a href="/login">Logga in</a>
 			} else {
 				<form method="POST" action="/logout" class="action-form">
+					<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
 					<button type="submit">Logga ut { authenticationStatus.PersonName }</button>
 				</form>
 			}

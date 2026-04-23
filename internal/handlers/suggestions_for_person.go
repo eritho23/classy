@@ -8,6 +8,7 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
+	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -55,7 +56,7 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdHandler(w http.Respon
 		Uid:      targetPersonRow.Uid,
 		Username: targetPersonRow.Username,
 		Grp:      targetPersonRow.Grp,
-	}, suggestions).Render(r.Context(), w)
+	}, suggestions, csrf.Token(r)).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render suggestions for person page: %v", err)
 	}

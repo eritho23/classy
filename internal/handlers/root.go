@@ -8,6 +8,7 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
+	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -41,27 +42,34 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 func (app *ClassyApplication) GetRootHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		err := layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		err := layouts.RootPage(authStatus, nil, csrf.Token(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render root page template: %v", err)
 		}
 		return
 	}
 
-	grp, err := app.queries.GetGroupByUsername(r.Context(), authStatus.PersonName)
+	groupUID, err := app.queries.GetGroupByPersonUid(r.Context(), authStatus.PersonId)
 	if err != nil {
-		log.Printf("failed to get group for user: %s", authStatus.PersonName)
-		err = layouts.RootPage(authStatus, nil).Render(r.Context(), w)
+		log.Printf("failed to get group UID for person: %v", authStatus.PersonId)
+		err = layouts.RootPage(authStatus, nil, csrf.Token(r)).Render(r.Context(), w)
 		if err != nil {
 			log.Printf("failed to render root page template: %v", err)
 		}
 		return
 	}
 
-	err = layouts.RootPage(authStatus, &queries.Grp{
-		Uid:  grp.GroupUid,
-		Name: grp.GroupName,
-	}).Render(r.Context(), w)
+	grp, err := app.queries.GetGroupByUid(r.Context(), groupUID)
+	if err != nil {
+		log.Printf("failed to get group by UID %v: %v", groupUID, err)
+		err = layouts.RootPage(authStatus, nil, csrf.Token(r)).Render(r.Context(), w)
+		if err != nil {
+			log.Printf("failed to render root page template: %v", err)
+		}
+		return
+	}
+
+	err = layouts.RootPage(authStatus, &grp, csrf.Token(r)).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render root page template: %v", err)
 	}

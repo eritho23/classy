@@ -7,6 +7,8 @@ import (
 	queries "classy/internal/generated/database"
 	"classy/internal/layouts"
 	"classy/internal/middleware"
+
+	"github.com/gorilla/csrf"
 )
 
 func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +32,7 @@ func (app *ClassyApplication) GetGroupGroupIdHandler(w http.ResponseWriter, r *h
 	err = layouts.GroupPage(authStatus, queries.Grp{
 		Uid:  groupRow.Uid,
 		Name: groupRow.Name,
-	}, students).Render(r.Context(), w)
+	}, students, csrf.Token(r)).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render group page template: %v", err)
 	}

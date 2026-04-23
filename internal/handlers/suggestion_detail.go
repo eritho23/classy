@@ -10,6 +10,7 @@ import (
 	"classy/internal/layouts"
 	"classy/internal/middleware"
 
+	"github.com/gorilla/csrf"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -41,16 +42,16 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 		return
 	}
 
-	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
-		Bytes: suggestionUUID,
-		Valid: true,
+	suggestionRow, err := app.queries.GetSuggestionByUidInGroupRegarding(r.Context(), queries.GetSuggestionByUidInGroupRegardingParams{
+		SuggestionUid: pgtype.UUID{Bytes: suggestionUUID, Valid: true},
+		RegardingUid:  pgtype.UUID{Bytes: regardingUUID, Valid: true},
+		GroupUid:      groupRow.Uid,
 	})
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		w.WriteHeader(http.StatusNotFound)
 		return
-	}
-	if !uuidEqual(suggestionRow.Regarding, pgtype.UUID{Bytes: regardingUUID, Valid: true}) {
-		w.WriteHeader(http.StatusNotFound)
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -59,12 +60,8 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if !uuidEqual(suggesterRow.Grp, groupRow.Uid) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
 
-	err = layouts.SuggestionDetailPage(authStatus, regardingRow, suggesterRow, suggestionRow).Render(r.Context(), w)
+	err = layouts.SuggestionDetailPage(authStatus, regardingRow, suggesterRow, suggestionRow, csrf.Token(r)).Render(r.Context(), w)
 	if err != nil {
 		log.Printf("failed to render suggestion detail page: %v", err)
 	}
@@ -99,9 +96,10 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		return
 	}
 
-	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
-		Bytes: suggestionUUID,
-		Valid: true,
+	suggestionRow, err := app.queries.GetSuggestionByUidInGroupRegarding(r.Context(), queries.GetSuggestionByUidInGroupRegardingParams{
+		SuggestionUid: pgtype.UUID{Bytes: suggestionUUID, Valid: true},
+		RegardingUid:  pgtype.UUID{Bytes: regardingUUID, Valid: true},
+		GroupUid:      groupRow.Uid,
 	})
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -114,20 +112,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 
 	if authStatus.PersonId != suggestionRow.Suggester {
 		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	if !uuidEqual(suggestionRow.Regarding, pgtype.UUID{Bytes: regardingUUID, Valid: true}) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	suggesterRow, err := app.queries.GetPersonByUid(r.Context(), suggestionRow.Suggester)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !uuidEqual(suggesterRow.Grp, groupRow.Uid) {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -185,9 +169,10 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		return
 	}
 
-	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{
-		Bytes: suggestionUUID,
-		Valid: true,
+	suggestionRow, err := app.queries.GetSuggestionByUidInGroupRegarding(r.Context(), queries.GetSuggestionByUidInGroupRegardingParams{
+		SuggestionUid: pgtype.UUID{Bytes: suggestionUUID, Valid: true},
+		RegardingUid:  pgtype.UUID{Bytes: regardingUUID, Valid: true},
+		GroupUid:      groupRow.Uid,
 	})
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -195,21 +180,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if !uuidEqual(suggestionRow.Regarding, pgtype.UUID{Bytes: regardingUUID, Valid: true}) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	suggesterRow, err := app.queries.GetPersonByUid(r.Context(), suggestionRow.Suggester)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !uuidEqual(suggesterRow.Grp, groupRow.Uid) || !uuidEqual(regardingRow.Grp, groupRow.Uid) {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -262,9 +232,11 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 		return
 	}
 
-	vote, err := app.queries.GetVoteByUid(r.Context(), pgtype.UUID{
-		Bytes: voteUUID,
-		Valid: true,
+	vote, err := app.queries.GetVoteByUidInGroupRegardingSuggestion(r.Context(), queries.GetVoteByUidInGroupRegardingSuggestionParams{
+		VoteUid:       pgtype.UUID{Bytes: voteUUID, Valid: true},
+		SuggestionUid: pgtype.UUID{Bytes: suggestionUUID, Valid: true},
+		RegardingUid:  pgtype.UUID{Bytes: regardingUUID, Valid: true},
+		GroupUid:      groupRow.Uid,
 	})
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -277,33 +249,6 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 
 	if vote.Caster != authStatus.PersonId {
 		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	if !uuidEqual(vote.TargetSuggestion, pgtype.UUID{Bytes: suggestionUUID, Valid: true}) || !uuidEqual(vote.Regarding, pgtype.UUID{Bytes: regardingUUID, Valid: true}) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	suggestionRow, err := app.queries.GetSuggestionByUid(r.Context(), pgtype.UUID{Bytes: suggestionUUID, Valid: true})
-	if errors.Is(err, pgx.ErrNoRows) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	} else if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !uuidEqual(suggestionRow.Regarding, regardingRow.Uid) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	suggesterRow, err := app.queries.GetPersonByUid(r.Context(), suggestionRow.Suggester)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !uuidEqual(suggesterRow.Grp, groupRow.Uid) {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
