@@ -33,6 +33,7 @@ buildGoModule {
   postInstall = ''
     mkdir -p "$out/static"
     minify ./static/stylesheet.css > "$out/static/stylesheet.css"
+    cp static/*.txt "$out/static"
   '';
 
   meta = {
