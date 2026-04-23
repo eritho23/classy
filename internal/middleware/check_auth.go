@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
@@ -59,8 +58,6 @@ func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 
 				return
 			}
-
-			log.Printf("acceptable session from user: %s", session.Person)
 
 			newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
 				IsAuthenticated: true,
