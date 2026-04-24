@@ -169,7 +169,6 @@ func main() {
 
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
 	trustedOrigins := getCSRFTrustedOrigins(parsedOrigin)
-	slog.Info("configured csrf trusted origins", slog.Any("trusted_origins", trustedOrigins))
 	csrfProtection := csrf.Protect(
 		getCSRFProtectionKey(),
 		csrf.Secure(parsedOrigin.Scheme == "https"),
@@ -179,21 +178,7 @@ func main() {
 		csrf.Path("/"),
 		csrf.HttpOnly(true),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			reason := "unknown"
-			if failure := csrf.FailureReason(r); failure != nil {
-				reason = failure.Error()
-			}
-			slog.Warn("csrf token validation failed",
-				slog.String("reason", reason),
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.String("host", r.Host),
-				slog.String("origin", r.Header.Get("Origin")),
-				slog.String("referer", r.Header.Get("Referer")),
-				slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
-				slog.String("sec_fetch_mode", r.Header.Get("Sec-Fetch-Mode")),
-				slog.String("sec_fetch_dest", r.Header.Get("Sec-Fetch-Dest")),
-			)
+			slog.Warn("csrf token validation failed")
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("CSRF token check failed"))
 		})),
