@@ -91,7 +91,7 @@ func normalizeNullOrigin(expectedOrigin *url.URL, next http.Handler) http.Handle
 		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions && r.Method != http.MethodTrace {
 			origin := r.Header.Get("Origin")
 			secFetchSite := strings.TrimSpace(strings.ToLower(r.Header.Get("Sec-Fetch-Site")))
-			if origin == "null" && secFetchSite == "same-origin" {
+			if origin == "null" && (secFetchSite == "" || secFetchSite == "same-origin" || secFetchSite == "none") {
 				hostMatchesExpected := r.Host == expectedOrigin.Host || r.Host == expectedOrigin.Hostname()
 				if hostMatchesExpected {
 					r.Header.Set("Origin", expectedOrigin.Scheme+"://"+expectedOrigin.Host)
@@ -191,6 +191,9 @@ func main() {
 				slog.String("host", r.Host),
 				slog.String("origin", r.Header.Get("Origin")),
 				slog.String("referer", r.Header.Get("Referer")),
+				slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
+				slog.String("sec_fetch_mode", r.Header.Get("Sec-Fetch-Mode")),
+				slog.String("sec_fetch_dest", r.Header.Get("Sec-Fetch-Dest")),
 			)
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("CSRF token check failed"))
