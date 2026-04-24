@@ -35,8 +35,19 @@ func getCSRFTrustedOrigins(origin *url.URL) []string {
 
 	hostname := origin.Hostname()
 	port := origin.Port()
+	if port == "" {
+		switch origin.Scheme {
+		case "https":
+			port = "443"
+		case "http":
+			port = "80"
+		}
+	}
 	add(origin.Host)
 	add(hostname)
+	if hostname != "" && port != "" {
+		add(net.JoinHostPort(hostname, port))
+	}
 	if hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1" {
 		for _, alias := range []string{"localhost", "127.0.0.1", "::1"} {
 			add(alias)
@@ -163,12 +174,24 @@ func main() {
 	csrfProtection := csrf.Protect(
 		getCSRFProtectionKey(),
 		csrf.Secure(parsedOrigin.Scheme == "https"),
-		csrf.SameSite(csrf.SameSiteStrictMode),
+		// Lax avoids false positives on legitimate top-level navigations.
+		csrf.SameSite(csrf.SameSiteLaxMode),
 		csrf.TrustedOrigins(trustedOrigins),
 		csrf.Path("/"),
 		csrf.HttpOnly(true),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			slog.Warn("csrf token validation failed")
+			reason := "unknown"
+			if failure := csrf.FailureReason(r); failure != nil {
+				reason = failure.Error()
+			}
+			slog.Warn("csrf token validation failed",
+				slog.String("reason", reason),
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("host", r.Host),
+				slog.String("origin", r.Header.Get("Origin")),
+				slog.String("referer", r.Header.Get("Referer")),
+			)
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("CSRF token check failed"))
 		})),
