@@ -151,14 +151,7 @@ func main() {
 		log.Fatalf("Failed to configure trusted origin: %v", err)
 	}
 	crossOriginProtection.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Warn("cross-origin protection denied request",
-			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
-			slog.String("host", r.Host),
-			slog.String("origin", r.Header.Get("Origin")),
-			slog.String("referer", r.Header.Get("Referer")),
-			slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
-		)
+		slog.Warn("cross-origin protection denied request")
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("CSRF check failed"))
 	}))
@@ -175,18 +168,7 @@ func main() {
 		csrf.Path("/"),
 		csrf.HttpOnly(true),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			reason := csrf.FailureReason(r)
-			slog.Warn("csrf token validation failed",
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.String("host", r.Host),
-				slog.String("origin", r.Header.Get("Origin")),
-				slog.String("referer", r.Header.Get("Referer")),
-				slog.String("sec_fetch_site", r.Header.Get("Sec-Fetch-Site")),
-				slog.Bool("x_csrf_token_present", r.Header.Get("X-CSRF-Token") != ""),
-				slog.Bool("form_csrf_token_present", r.PostFormValue("gorilla.csrf.Token") != ""),
-				slog.Any("reason", reason),
-			)
+			slog.Warn("csrf token validation failed")
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("CSRF token check failed"))
 		})),
