@@ -36,6 +36,7 @@ buildGoModule {
     mkdir -p "$out/static"
     minify ./static/stylesheet.css > "$out/static/stylesheet.css"
     cp static/*.txt "$out/static"
+    cp static/*.svg "$out/static"
 
     touch "$out/caddy_csp_config_snippet"
     STYLESHEET_HASH="$(cat "$out/static/stylesheet.css" | openssl dgst -sha256 -binary | base64)"
