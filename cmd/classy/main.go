@@ -170,7 +170,6 @@ func main() {
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
 	trustedOrigins := getCSRFTrustedOrigins(parsedOrigin)
 	slog.Info("configured csrf trusted origins", slog.Any("trusted_origins", trustedOrigins))
-	muxWithMiddleware = normalizeNullOrigin(parsedOrigin, muxWithMiddleware)
 	csrfProtection := csrf.Protect(
 		getCSRFProtectionKey(),
 		csrf.Secure(parsedOrigin.Scheme == "https"),
@@ -199,8 +198,9 @@ func main() {
 			_, _ = w.Write([]byte("CSRF token check failed"))
 		})),
 	)
+	handler := normalizeNullOrigin(parsedOrigin, csrfProtection(muxWithMiddleware))
 	server := &http.Server{
-		Handler:           crossOriginProtection.Handler(csrfProtection(muxWithMiddleware)),
+		Handler:           crossOriginProtection.Handler(handler),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      30 * time.Second,
