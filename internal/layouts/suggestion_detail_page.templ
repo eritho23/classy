@@ -15,11 +15,13 @@ templ SuggestionDetailPage(authenticationStatus middleware.AuthenticationStatus,
 			<img src="/static/paper-plate.svg" alt="Papperstallrik med förslagstext" class="plate-title-image"/>
 			<p class="plate-title-text">{ suggestion.Suggestion.String }</p>
 		</div>
-		<div class="motivation-card">
-			<p class="motivation-card-text">
-				{ suggestion.Motivation.String }
-			</p>
-		</div>
+		if len(suggestion.Motivation.String) > 0 {
+			<div class="motivation-card">
+				<p class="motivation-card-text">
+					{ suggestion.Motivation.String }
+				</p>
+			</div>
+		}
 		if authenticationStatus.PersonId == suggestion.Suggester {
 			<form method="POST">
 				<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
