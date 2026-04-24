@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"classy/internal/credentials"
@@ -72,6 +73,23 @@ func getCSRFProtectionKey() []byte {
 
 	log.Print("CSRF auth key is not configured; using ephemeral key")
 	return key
+}
+
+func normalizeNullOrigin(expectedOrigin *url.URL, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions && r.Method != http.MethodTrace {
+			origin := r.Header.Get("Origin")
+			secFetchSite := strings.TrimSpace(strings.ToLower(r.Header.Get("Sec-Fetch-Site")))
+			if origin == "null" && secFetchSite == "same-origin" {
+				hostMatchesExpected := r.Host == expectedOrigin.Host || r.Host == expectedOrigin.Hostname()
+				if hostMatchesExpected {
+					r.Header.Set("Origin", expectedOrigin.Scheme+"://"+expectedOrigin.Host)
+				}
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -148,6 +166,7 @@ func main() {
 	muxWithMiddleware := middleware.CheckAuth(q, mux)
 	trustedOrigins := getCSRFTrustedOrigins(parsedOrigin)
 	slog.Info("configured csrf trusted origins", slog.Any("trusted_origins", trustedOrigins))
+	muxWithMiddleware = normalizeNullOrigin(parsedOrigin, muxWithMiddleware)
 	csrfProtection := csrf.Protect(
 		getCSRFProtectionKey(),
 		csrf.Secure(parsedOrigin.Scheme == "https"),
