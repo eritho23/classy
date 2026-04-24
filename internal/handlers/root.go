@@ -28,6 +28,8 @@ func (app *ClassyApplication) RegisterRouteHandlers(router *http.ServeMux) {
 	router.HandleFunc("GET /", app.GetRootHandler)
 	router.HandleFunc("GET /login", app.GetLoginHandler)
 	router.HandleFunc("POST /login", app.PostLoginHandler)
+	router.HandleFunc("GET /changepassword", app.GetChangePasswordHandler)
+	router.HandleFunc("POST /changepassword", app.PostChangePasswordHandler)
 	router.HandleFunc("POST /logout", app.GetLogoutHandler)
 	router.HandleFunc("GET /group/{groupId}", app.GetGroupGroupIdHandler)
 	router.HandleFunc("GET /group/{groupId}/person/{personId}/suggest", app.GetGroupGroupIdPersonPersonIdSuggestHandler)

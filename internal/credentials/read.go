@@ -30,7 +30,7 @@ func getCredentialsDirectory() (string, error) {
 	return value, nil
 }
 
-func ReadCredential(name string) (string, error) {
+func ReadCredential(name string) (credential string, err error) {
 	credentialsDirectoryPath, err := getCredentialsDirectory()
 	if err != nil {
 		return "", err
@@ -40,13 +40,21 @@ func ReadCredential(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer root.Close()
+	defer func() {
+		if closeErr := root.Close(); err == nil && closeErr != nil {
+			err = closeErr
+		}
+	}()
 
 	file, err := root.Open(name)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); err == nil && closeErr != nil {
+			err = closeErr
+		}
+	}()
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {

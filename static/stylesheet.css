@@ -52,6 +52,12 @@ th {
 	letter-spacing: 0.02em;
 }
 
+.auth-actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
 main {
 	padding: 3rem 1.5rem;
 	display: flex;

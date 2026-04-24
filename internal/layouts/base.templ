@@ -28,10 +28,13 @@ templ header(authenticationStatus middleware.AuthenticationStatus, csrfToken str
 			if !authenticationStatus.IsAuthenticated {
 				<a href="/login">Logga in</a>
 			} else {
-				<form method="POST" action="/logout" class="action-form">
-					<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
-					<button type="submit">Logga ut { authenticationStatus.PersonName }</button>
-				</form>
+				<div class="auth-actions">
+					<a href="/changepassword">Ändra lösenord</a>
+					<form method="POST" action="/logout" class="action-form">
+						<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
+						<button type="submit">Logga ut { authenticationStatus.PersonName }</button>
+					</form>
+				</div>
 			}
 		</nav>
 	</header>

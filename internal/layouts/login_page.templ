@@ -17,3 +17,22 @@ templ LoginPage(loginError string, authenticationStatus middleware.Authenticatio
 		</form>
 	}
 }
+
+templ ChangePasswordPage(loginError string, authenticationStatus middleware.AuthenticationStatus, csrfToken string) {
+	@Base("Classy: Ändra lösenord", authenticationStatus, csrfToken) {
+		if loginError != "" {
+			<div>
+				{ loginError }
+			</div>
+		}
+		<form method="post" class="login-form">
+			<h1>Ändra lösenord</h1>
+			<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
+			<input type="password" name="current" placeholder="Nuvarande lösenord"/>
+			<input type="password" name="password1" placeholder="Nytt lösenord"/>
+			<input type="password" name="password2" placeholder="Upprepa nytt lösenord"/>
+			<span>Du kommer att loggas ut efter du bytt lösenord.</span>
+			<button type="submit">Ändra lösenord</button>
+		</form>
+	}
+}

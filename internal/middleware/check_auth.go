@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	queries "classy/internal/generated/database"
@@ -48,6 +49,7 @@ func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 		} else {
 			sessionValueHexHashHex := hashing.HashSessionValue(sessionid.Value)
 			session, err := queries.GetSessionByValue(r.Context(), sessionValueHexHashHex)
+
 			if err != nil || time.Now().After(session.ExpiresAt.Time) {
 				newCtx := context.WithValue(r.Context(), authenticationStatusKey, &AuthenticationStatus{
 					IsAuthenticated: false,
@@ -56,6 +58,11 @@ func CheckAuth(queries *queries.Queries, next http.Handler) http.Handler {
 
 				next.ServeHTTP(w, newReq)
 
+				return
+			}
+
+			if !session.PasswordLastChanged.Valid && r.URL.Path != "/changepassword" && r.URL.Path != "/logout" && !strings.HasPrefix(r.URL.Path, "/static") {
+				http.Redirect(w, r, "/changepassword", http.StatusSeeOther)
 				return
 			}
 

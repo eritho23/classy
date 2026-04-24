@@ -52,6 +52,22 @@ returning
   username,
   grp;
 
+-- name: UpdatePersonPasswordHashAndDeleteSessionsByPersonUid :exec
+with
+  updated as (
+    update person p
+    set
+      password_hash = $1,
+      password_last_changed = $2
+    where
+      p.uid = $3
+    returning
+      p.uid as uid
+  )
+delete from session s using updated u
+where
+  s.person = u.uid;
+
 -- name: GetPersonByUsername :one
 select
   uid,
@@ -301,7 +317,8 @@ select
   created_at,
   expires_at,
   session.person,
-  person.username
+  person.username,
+  person.password_last_changed
 from
   session
   inner join person on session.person = person.uid

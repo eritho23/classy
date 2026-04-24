@@ -75,6 +75,17 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodyBytes)
+	err := r.ParseForm()
+	if err != nil {
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			return
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	groupRow, ok := app.requireGroupMembership(w, r, authStatus)
 	if !ok {
