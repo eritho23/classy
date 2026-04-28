@@ -94,7 +94,7 @@ func (app *ClassyApplication) PostLoginHandler(w http.ResponseWriter, r *http.Re
 	newSession, err := app.queries.CreateSession(r.Context(), queries.CreateSessionParams{
 		Value:     sessionValueHexHashHex,
 		CreatedAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
-		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(1 * time.Hour), Valid: true},
+		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		Person:    personRow.Uid,
 	})
 	if err != nil {
