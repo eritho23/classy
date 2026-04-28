@@ -99,14 +99,14 @@ func parsePhcString(inp string) (*Argon2IdHash, error) {
 
 	returnValue.Threads = uint8(threadsParsed)
 
-	returnValue.Salt = make([]byte, base64.RawStdEncoding.Strict().DecodedLen(len(captureGroups[5])))
-	returnValue.Hash = make([]byte, base64.RawStdEncoding.Strict().DecodedLen(len(captureGroups[6])))
-	_, err = base64.RawStdEncoding.Strict().Decode(returnValue.Salt, []byte(captureGroups[5]))
+	returnValue.Salt = make([]byte, base64.RawStdEncoding.DecodedLen(len(captureGroups[5])))
+	returnValue.Hash = make([]byte, base64.RawStdEncoding.DecodedLen(len(captureGroups[6])))
+	_, err = base64.RawStdEncoding.Decode(returnValue.Salt, []byte(captureGroups[5]))
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = base64.RawStdEncoding.Strict().Decode(returnValue.Hash, []byte(captureGroups[6]))
+	_, err = base64.RawStdEncoding.Decode(returnValue.Hash, []byte(captureGroups[6]))
 	if err != nil {
 		return nil, err
 	}
