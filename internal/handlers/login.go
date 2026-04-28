@@ -124,13 +124,8 @@ func (app *ClassyApplication) GetLogoutHandler(w http.ResponseWriter, r *http.Re
 
 	sessionValueHexHashHex := hashing.HashSessionValue(session.Value)
 	oldSession, err := app.queries.GetSessionByValue(r.Context(), sessionValueHexHashHex)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if time.Now().After(oldSession.ExpiresAt.Time) {
-		w.WriteHeader(http.StatusUnauthorized)
+	if err != nil || time.Now().After(oldSession.ExpiresAt.Time) {
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
@@ -156,7 +151,7 @@ func (app *ClassyApplication) GetLogoutHandler(w http.ResponseWriter, r *http.Re
 func (app *ClassyApplication) GetChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 	err := layouts.ChangePasswordPage("", middleware.GetAuthenticationStatusFromRequestContext(r), csrf.Token(r)).Render(r.Context(), w)
@@ -168,7 +163,7 @@ func (app *ClassyApplication) GetChangePasswordHandler(w http.ResponseWriter, r 
 func (app *ClassyApplication) PostChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 

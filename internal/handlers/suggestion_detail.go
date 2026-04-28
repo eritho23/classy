@@ -18,7 +18,7 @@ import (
 func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestionSuggestionI
 func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
@@ -214,7 +214,7 @@ func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestion
 func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestionSuggestionIdVoteVoteIdRemoveHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 

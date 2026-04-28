@@ -17,7 +17,7 @@ import (
 func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (app *ClassyApplication) GetGroupGroupIdPersonPersonIdSuggestHandler(w http
 func (app *ClassyApplication) PostGroupGroupIdPersonPersonIdSuggestHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus := middleware.GetAuthenticationStatusFromRequestContext(r)
 	if !authStatus.IsAuthenticated {
-		w.WriteHeader(http.StatusUnauthorized)
+		clearSessionAndRedirectToLogin(w, r)
 		return
 	}
 
