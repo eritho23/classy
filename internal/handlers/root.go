@@ -9,15 +9,15 @@ import (
 	"classy/internal/middleware"
 
 	"github.com/gorilla/csrf"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ClassyApplication struct {
 	queries *queries.Queries
-	db      *pgx.Conn
+	db      *pgxpool.Pool
 }
 
-func NewClassyApplication(queries *queries.Queries, db *pgx.Conn) ClassyApplication {
+func NewClassyApplication(queries *queries.Queries, db *pgxpool.Pool) ClassyApplication {
 	return ClassyApplication{
 		queries: queries,
 		db:      db,

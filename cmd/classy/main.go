@@ -20,7 +20,7 @@ import (
 	"classy/internal/middleware"
 
 	"github.com/gorilla/csrf"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func getCSRFTrustedOrigins(origin *url.URL) []string {
@@ -132,10 +132,11 @@ func main() {
 		log.Fatal("ORIGIN must be a valid absolute URL")
 	}
 
-	db, err := pgx.Connect(ctx, databaseUrl)
+	db, err := pgxpool.New(ctx, databaseUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
+	defer db.Close()
 
 	q := queries.New(db)
 	app := handlers.NewClassyApplication(q, db)
@@ -194,10 +195,6 @@ func main() {
 
 	if err := server.Serve(listener); err != nil {
 		log.Fatal(err)
-	}
-
-	if err := db.Close(ctx); err != nil {
-		log.Printf("failed to close db: %v", err)
 	}
 
 	if err := listener.Close(); err != nil {
