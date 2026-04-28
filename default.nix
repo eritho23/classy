@@ -14,7 +14,7 @@ buildGoModule {
 
   src = lib.cleanSource ./.;
 
-  vendorHash = "sha256-rumU/gg0Ln7j8CicF1c7wyT0Qv8VHOWlr5KexW3nlNM=";
+  vendorHash = "sha256-qvrX3Cc8wtFrXqQlPNJJn8GpUmG0rMSWCeXST5bVTgU=";
 
   subPackages = [
     "cmd/classy"
