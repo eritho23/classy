@@ -17,20 +17,6 @@ from
 where
   uid = $1;
 
--- name: GetGroupByUsername :one
-select
-  person.username as username,
-  person.uid as person_uid,
-  grp.uid as group_uid,
-  grp.name as group_name
-from
-  grp
-  inner join person on person.grp = grp.uid
-where
-  person.username = $1
-limit
-  1;
-
 -- name: GetGroupByPersonUid :one
 select
   grp.uid as group_uid
@@ -68,18 +54,6 @@ delete from session s using updated u
 where
   s.person = u.uid;
 
--- name: GetPersonByUsername :one
-select
-  uid,
-  username,
-  grp
-from
-  person
-where
-  username = $1
-limit
-  1;
-
 -- name: GetPersonByUid :one
 select
   uid,
@@ -103,11 +77,6 @@ where
   username = $1
 limit
   1;
-
--- name: DeletePersonByUsername :exec
-delete from person
-where
-  username = $1;
 
 -- name: GetStudentsAndSuggestionCountsByGrp :many
 select
@@ -140,18 +109,6 @@ returning
   suggestion,
   motivation;
 
--- name: GetSuggestionByUid :one
-select
-  uid,
-  suggester,
-  regarding,
-  suggestion,
-  motivation
-from
-  suggestion
-where
-  uid = $1;
-
 -- name: GetSuggestionByUidInGroupRegarding :one
 select
   suggestion.uid,
@@ -178,39 +135,6 @@ set
   motivation = $2
 where
   uid = $3;
-
--- name: DeleteSuggestion :exec
-delete from suggestion
-where
-  uid = $1;
-
--- name: GetSuggestionsByRegardingUser :many
-select
-  suggestion.uid,
-  suggester,
-  suggestion.regarding,
-  suggestion,
-  motivation,
-  person.username as suggester_username,
-  (
-    select
-      count(*)
-    from
-      vote
-    where
-      target_suggestion = suggestion.uid
-  ) as number_of_votes,
-  requester_vote.uid as requester_vote_uid,
-  requester_vote.target_suggestion as requester_vote_target_suggestion
-from
-  suggestion
-  inner join person on person.uid = suggestion.suggester
-  left join vote as requester_vote on requester_vote.target_suggestion = suggestion.uid
-  and requester_vote.caster = $2
-where
-  suggestion.regarding = $1
-order by
-  number_of_votes desc;
 
 -- name: GetSuggestionsByRegardingUserInGroup :many
 select
@@ -260,18 +184,6 @@ returning
   target_suggestion,
   regarding,
   time;
-
--- name: GetVoteByUid :one
-select
-  uid,
-  caster,
-  target_suggestion,
-  regarding,
-  time
-from
-  vote
-where
-  uid = $1;
 
 -- name: GetVoteByUidInGroupRegardingSuggestion :one
 select
@@ -366,3 +278,63 @@ select
       and regarding = @regarding_uid
       and grp.uid = @group_uid
   ) as suggestion_exists;
+
+-- name: SimpleCompleteChallengeByUid :exec
+update challenges
+set
+  completed_by = @person_uid
+where
+  uid = @challenge_uid;
+
+-- name: SimpleUncompleteChallengeByUid :exec
+update challenges
+set
+  completed_by = null
+where
+  uid = @challenge_uid;
+
+-- name: GetAllChallenges :many
+select
+  uid,
+  description,
+  assigned_number,
+  points,
+  extra_points_available,
+  extra_points_received,
+  completed_by
+from
+  challenges
+order by
+  assigned_number asc;
+
+-- name: GetTotalPoints :one
+select
+  coalesce(sum(points + extra_points_received), 0)::bigint as sum
+from
+  challenges
+where
+  completed_by is not null;
+
+-- name: CompleteChallengeWithExtraPoints :exec
+update challenges
+set
+  completed_by = @person_uid,
+  extra_points_received = @extra_points
+where
+  uid = @challenge_uid;
+
+-- name: GetAllChallengesWithCompleter :many
+select
+  c.uid as challenge_uid,
+  c.description,
+  c.assigned_number,
+  c.points,
+  c.extra_points_available,
+  c.extra_points_received,
+  c.completed_by,
+  p.username as completer_username
+from
+  challenges c
+  left join person p on c.completed_by = p.uid
+order by
+  c.assigned_number asc;
