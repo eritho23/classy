@@ -24,7 +24,12 @@ templ Base(title string, authenticationStatus middleware.AuthenticationStatus, c
 templ header(authenticationStatus middleware.AuthenticationStatus, csrfToken string) {
 	<header>
 		<nav>
-			<a href="/">Start</a>
+			<div class="nav-links">
+				<a href="/">Start</a>
+				if authenticationStatus.IsAuthenticated {
+					<a href="/scoreboard">Poängtavla</a>
+				}
+			</div>
 			if !authenticationStatus.IsAuthenticated {
 				<a href="/login">Logga in</a>
 			} else {

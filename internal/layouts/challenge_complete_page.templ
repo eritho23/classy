@@ -1,0 +1,23 @@
+package layouts
+
+import "classy/internal/generated/database"
+import "classy/internal/middleware"
+import "fmt"
+
+templ ChallengeCompletePage(authenticationStatus middleware.AuthenticationStatus, challenge queries.Challenge, csrfToken string) {
+	@Base("Classy: Slutför utmaning", authenticationStatus, csrfToken) {
+		<h1>Slutför utmaning</h1>
+		<h2>{ challenge.Description.String }</h2>
+		<p>Standardpoäng: { fmt.Sprint(challenge.Points) }</p>
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/scoreboard/challenge/%v/complete", challenge.Uid)) }>
+			<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
+			if challenge.ExtraPointsAvailable {
+				<label for="extra_points">Extra poäng:</label>
+				<input type="number" id="extra_points" name="extra_points" min="0" value="0"/>
+				<br/>
+				<br/>
+			}
+			<button type="submit">Slutför</button>
+		</form>
+	}
+}

@@ -9,7 +9,7 @@ import (
 
 templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationStatus, target queries.Person, suggestions []queries.GetSuggestionsByRegardingUserInGroupRow, csrfToken string) {
 	@Base("Classy: Förslag för "+target.Username, authenticationStatus, csrfToken) {
-		<a href={ fmt.Sprintf("/group/%s", target.Grp) }>Tillbaka till grupp</a>
+		<a href={ templ.SafeURL(fmt.Sprintf("/group/%s", target.Grp)) }>Tillbaka till grupp</a>
 		<h1>Förslag för { target.Username }</h1>
 		if len(suggestions) > 0 {
 			<table>
@@ -25,7 +25,7 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 							{ suggestion.SuggesterUsername }
 						</td>
 						<td>
-							<a href={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s", target.Grp, target.Uid, suggestion.Uid) }>
+							<a href={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s/suggestion/%s", target.Grp, target.Uid, suggestion.Uid)) }>
 								{ suggestion.Suggestion.String }
 							</a>
 						</td>
@@ -34,13 +34,13 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 						</td>
 						<td>
 							if (!suggestion.RequesterVoteUid.Valid && authenticationStatus.PersonId != suggestion.Suggester) {
-								<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote", target.Grp, target.Uid, suggestion.Uid) } class="action-form">
+								<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote", target.Grp, target.Uid, suggestion.Uid)) } class="action-form">
 									<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
 									<button type="submit">Rösta</button>
 								</form>
 							} else {
 								if suggestion.RequesterVoteTargetSuggestion == suggestion.Uid {
-									<form method="POST" action={ fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote/%s/remove", target.Grp, target.Uid, suggestion.Uid, suggestion.RequesterVoteUid) } class="action-form">
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s/suggestion/%s/vote/%s/remove", target.Grp, target.Uid, suggestion.Uid, suggestion.RequesterVoteUid.String)) } class="action-form">
 										<input type="hidden" name="gorilla.csrf.Token" value={ csrfToken }/>
 										<button type="submit">Ta bort röst</button>
 									</form>
@@ -55,7 +55,7 @@ templ SuggestionsForPersonPage(authenticationStatus middleware.AuthenticationSta
 		} else {
 			Inga förslag ännu.
 		}
-		<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", target.Grp, target.Uid) }>
+		<a href={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s/suggest", target.Grp, target.Uid)) }>
 			Skapa förslag för { target.Username }.
 		</a>
 	}

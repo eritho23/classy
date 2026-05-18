@@ -13,7 +13,7 @@ templ RootPage(authenticationStatus middleware.AuthenticationStatus, grp *querie
 		</p>
 		if authenticationStatus.IsAuthenticated && grp != nil {
 			<h2>Gå till din grupp</h2>
-			<a class="startpage-group-link" href={ "/group/" + grp.Uid.String() }>
+			<a class="startpage-group-link" href={ templ.SafeURL("/group/" + grp.Uid.String()) }>
 				{ grp.Name.String }
 			</a>
 		} else {

@@ -21,7 +21,7 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 						if authenticationStatus.PersonId == item.Uid {
 							{ item.Username } (du)
 						} else {
-							<a href={ fmt.Sprintf("/group/%s/person/%s", grp.Uid, item.Uid) }>{ item.Username }</a>
+							<a href={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s", grp.Uid, item.Uid)) }>{ item.Username }</a>
 						}
 					</td>
 					<td>
@@ -33,7 +33,7 @@ templ GroupPage(authenticationStatus middleware.AuthenticationStatus, grp querie
 					</td>
 					<td>
 						if authenticationStatus.PersonId != item.Uid {
-							<a href={ fmt.Sprintf("/group/%s/person/%s/suggest", grp.Uid, item.Uid) }>
+							<a href={ templ.SafeURL(fmt.Sprintf("/group/%s/person/%s/suggest", grp.Uid, item.Uid)) }>
 								Föreslå
 							</a>
 						} else {
