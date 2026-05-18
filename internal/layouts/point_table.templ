@@ -1,0 +1,42 @@
+package layouts
+
+import "classy/internal/generated/database"
+import "classy/internal/middleware"
+import "fmt"
+
+templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoints int, challenges []queries.GetAllChallengesWithCompleterRow, csrfToken string) {
+	@Base("Classy: Poängtavla", authenticationStatus, csrfToken) {
+		<h1>Total poäng: <b>{ fmt.Sprint(totalPoints) }</b></h1>
+		<table>
+			<tr>
+				<th>#</th>
+				<th>Beskrivning</th>
+				<th>Poäng</th>
+				<th>Status / Slutförd av</th>
+				<th>Actions</th>
+			</tr>
+			for _, challenge := range challenges {
+				<tr class={ map[bool]string{true: "challenge-completed", false: ""}[challenge.CompletedBy.Valid] }>
+					<td>{ fmt.Sprint(challenge.AssignedNumber) }</td>
+					<td>{ challenge.Description.String }</td>
+					<td>{ fmt.Sprint(challenge.Points) }</td>
+					<td>
+						if challenge.CompletedBy.Valid {
+							Slutförd av { challenge.CompleterUsername.String }
+						} else {
+							Ej slutförd
+						}
+					</td>
+					<td>
+						if !challenge.CompletedBy.Valid {
+							<a href={ templ.SafeURL(fmt.Sprintf("/scoreboard/challenge/%v/complete", challenge.ChallengeUid)) }>
+								
+								<button type="button">Slutför</button>
+							</a>
+						}
+					</td>
+				</tr>
+			}
+		</table>
+	}
+}
