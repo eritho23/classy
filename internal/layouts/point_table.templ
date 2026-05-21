@@ -1,7 +1,11 @@
 package layouts
 
-import "classy/internal/middleware"
-import "fmt"
+import (
+	"classy/internal/generated/database"
+	"classy/internal/middleware"
+
+	"fmt"
+)
 
 templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoints int, challenges []queries.GetAllChallengesWithCompleterRow, csrfToken string) {
 	@Base("Classy: Poängtavla", authenticationStatus, csrfToken) {
