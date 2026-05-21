@@ -1,6 +1,5 @@
 package layouts
 
-import "classy/internal/generated/database"
 import "classy/internal/middleware"
 import "fmt"
 
@@ -9,6 +8,7 @@ templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoin
 		<h1>Total poäng: <b>{ fmt.Sprint(totalPoints) }</b></h1>
 		<table>
 			<tr>
+				<th>Släpp nummer</th>
 				<th>#</th>
 				<th>Beskrivning</th>
 				<th>Poäng</th>
@@ -17,6 +17,7 @@ templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoin
 			</tr>
 			for _, challenge := range challenges {
 				<tr class={ map[bool]string{true: "challenge-completed", false: ""}[challenge.CompletedBy.Valid] }>
+					<td>{ fmt.Sprint(challenge.BatchNumber) }</td>
 					<td>{ fmt.Sprint(challenge.AssignedNumber) }</td>
 					<td>{ challenge.Description.String }</td>
 					<td>{ fmt.Sprint(challenge.Points) }</td>
@@ -30,7 +31,6 @@ templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoin
 					<td>
 						if !challenge.CompletedBy.Valid {
 							<a href={ templ.SafeURL(fmt.Sprintf("/scoreboard/challenge/%v/complete", challenge.ChallengeUid)) }>
-								
 								<button type="button">Slutför</button>
 							</a>
 						}
