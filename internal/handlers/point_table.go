@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -161,5 +162,6 @@ func (app *ClassyApplication) PostScoreboardChallengeCompleteHandler(w http.Resp
 		return
 	}
 
-	http.Redirect(w, r, "/scoreboard", http.StatusSeeOther)
+	hashPart := fmt.Sprintf("#b%vc%v", challenge.BatchNumber, challenge.AssignedNumber)
+	http.Redirect(w, r, "/scoreboard"+hashPart, http.StatusSeeOther)
 }

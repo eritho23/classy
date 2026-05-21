@@ -20,7 +20,7 @@ templ PointTable(authenticationStatus middleware.AuthenticationStatus, totalPoin
 				<th>Actions</th>
 			</tr>
 			for _, challenge := range challenges {
-				<tr class={ map[bool]string{true: "challenge-completed", false: ""}[challenge.CompletedBy.Valid] }>
+				<tr id={ fmt.Sprintf("b%vc%v", challenge.BatchNumber, challenge.AssignedNumber) } class={ map[bool]string{true: "challenge-completed", false: ""}[challenge.CompletedBy.Valid] }>
 					<td class="hide-on-mobile">{ fmt.Sprint(challenge.BatchNumber) }</td>
 					<td>{ fmt.Sprint(challenge.AssignedNumber) }</td>
 					<td>{ challenge.Description.String }</td>
