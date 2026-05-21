@@ -301,10 +301,12 @@ select
   points,
   extra_points_available,
   extra_points_received,
-  completed_by
+  completed_by,
+  batch_number
 from
   challenges
 order by
+  batch_number asc,
   assigned_number asc;
 
 -- name: GetTotalPoints :one
@@ -332,9 +334,11 @@ select
   c.extra_points_available,
   c.extra_points_received,
   c.completed_by,
+  c.batch_number,
   p.username as completer_username
 from
   challenges c
   left join person p on c.completed_by = p.uid
 order by
+  c.batch_number asc,
   c.assigned_number asc;
